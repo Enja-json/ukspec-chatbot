@@ -20,6 +20,7 @@ import { useSearchParams } from 'next/navigation';
 import { useChatVisibility } from '@/hooks/use-chat-visibility';
 import { useAutoResume } from '@/hooks/use-auto-resume';
 import { ChatSDKError } from '@/lib/errors';
+import { GuestNotification } from './guest-notification';
 
 export function Chat({
   id,
@@ -159,6 +160,8 @@ export function Chat({
           )}
         </form>
       </div>
+
+      <GuestNotification session={session} />
 
       <Artifact
         chatId={id}
