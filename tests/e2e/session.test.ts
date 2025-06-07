@@ -192,10 +192,10 @@ test.describe('Entitlements', () => {
     chatPage = new ChatPage(page);
   });
 
-  test('Guest user cannot send more than 20 messages/day', async () => {
+  test('Guest user cannot send more than 5 messages/day', async () => {
     await chatPage.createNewChat();
 
-    for (let i = 0; i <= 20; i++) {
+    for (let i = 0; i <= 5; i++) {
       await chatPage.sendUserMessage('Why is the sky blue?');
       await chatPage.isGenerationComplete();
     }

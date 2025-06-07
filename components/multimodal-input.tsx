@@ -42,6 +42,7 @@ function PureMultimodalInput({
   handleSubmit,
   className,
   selectedVisibilityType,
+  selectedChatModel,
 }: {
   chatId: string;
   input: UseChatHelpers['input'];
@@ -56,6 +57,7 @@ function PureMultimodalInput({
   handleSubmit: UseChatHelpers['handleSubmit'];
   className?: string;
   selectedVisibilityType: VisibilityType;
+  selectedChatModel: string;
 }) {
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const { width } = useWindowSize();
@@ -227,6 +229,7 @@ function PureMultimodalInput({
             append={append}
             chatId={chatId}
             selectedVisibilityType={selectedVisibilityType}
+            selectedChatModel={selectedChatModel}
           />
         )}
 
@@ -318,6 +321,7 @@ export const MultimodalInput = memo(
     if (!equal(prevProps.attachments, nextProps.attachments)) return false;
     if (prevProps.selectedVisibilityType !== nextProps.selectedVisibilityType)
       return false;
+    if (prevProps.selectedChatModel !== nextProps.selectedChatModel) return false;
 
     return true;
   },

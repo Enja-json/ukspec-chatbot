@@ -1,6 +1,29 @@
 import { motion } from 'framer-motion';
 
-export const Greeting = () => {
+interface GreetingProps {
+  selectedChatModel: string;
+}
+
+export const Greeting = ({ selectedChatModel }: GreetingProps) => {
+  // Define greetings for each model
+  const greetings = {
+    'mini-mentor-model': {
+      title: 'Hello there!',
+      subtitle: 'Ready to advance your engineering career?'
+    },
+    'uk-spec-competency-model': {
+      title: 'Welcome!',
+      subtitle: 'Let\'s analyse your work against UK-SPEC competencies.'
+    },
+    // Fallback for any other models
+    default: {
+      title: 'Hello there!',
+      subtitle: 'How can I help you today?'
+    }
+  };
+
+  const currentGreeting = greetings[selectedChatModel as keyof typeof greetings] || greetings.default;
+
   return (
     <div
       key="overview"
@@ -13,7 +36,7 @@ export const Greeting = () => {
         transition={{ delay: 0.5 }}
         className="text-2xl font-semibold"
       >
-        Hello there!
+        {currentGreeting.title}
       </motion.div>
       <motion.div
         initial={{ opacity: 0, y: 10 }}
@@ -22,7 +45,7 @@ export const Greeting = () => {
         transition={{ delay: 0.6 }}
         className="text-2xl text-zinc-500"
       >
-        How can I help you today?
+        {currentGreeting.subtitle}
       </motion.div>
     </div>
   );

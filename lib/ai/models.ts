@@ -1,4 +1,4 @@
-export const DEFAULT_CHAT_MODEL: string = 'chat-model';
+export const DEFAULT_CHAT_MODEL: string = 'mini-mentor-model';
 
 export interface ChatModel {
   id: string;
@@ -8,13 +8,13 @@ export interface ChatModel {
 
 export const chatModels: Array<ChatModel> = [
   {
-    id: 'chat-model',
-    name: 'Chat model',
-    description: 'Primary model for all-purpose chat',
+    id: 'mini-mentor-model',
+    name: 'Mini Mentor',
+    description: 'Your guide through the UK engineering chartership journey',
   },
   {
-    id: 'chat-model-reasoning',
-    name: 'Reasoning model',
-    description: 'Uses advanced reasoning',
+    id: 'uk-spec-competency-model',
+    name: 'UK-SPEC Competency Analyser',
+    description: 'Analyses engineering tasks against UK-SPEC Fourth Edition competencies',
   },
 ];

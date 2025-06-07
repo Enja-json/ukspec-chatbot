@@ -10,14 +10,41 @@ interface SuggestedActionsProps {
   chatId: string;
   append: UseChatHelpers['append'];
   selectedVisibilityType: VisibilityType;
+  selectedChatModel: string;
 }
 
 function PureSuggestedActions({
   chatId,
   append,
   selectedVisibilityType,
+  selectedChatModel,
 }: SuggestedActionsProps) {
-  const suggestedActions = [
+  // Mini Mentor specific suggestions
+  const miniMentorActions = [
+    {
+      title: 'Should I pursue',
+      label: 'CEng, IEng, or EngTech registration?',
+      action: 'Should I pursue CEng, IEng, or EngTech registration? What are the differences between these levels?',
+    },
+    {
+      title: 'How do I document',
+      label: 'evidence for UK-SPEC competencies?',
+      action: 'How do I document evidence for UK-SPEC competencies? What should I include in my evidence forms?',
+    },
+    {
+      title: 'What CPD activities',
+      label: 'count towards chartership?',
+      action: 'What CPD activities count towards chartership? How should I plan and record my professional development?',
+    },
+    {
+      title: 'How do I prepare',
+      label: 'for my professional review interview?',
+      action: 'How do I prepare for my professional review interview? What can I expect during the process?',
+    },
+  ];
+
+  // Default general suggestions (fallback, though not used in current setup)
+  const defaultActions = [
     {
       title: 'What are the advantages',
       label: 'of using Next.js?',
@@ -39,6 +66,18 @@ function PureSuggestedActions({
       action: 'What is the weather in San Francisco?',
     },
   ];
+
+  // Choose suggestions based on model - only show for Mini Mentor, hide for UK-SPEC
+  const suggestedActions = selectedChatModel === 'mini-mentor-model' 
+    ? miniMentorActions 
+    : selectedChatModel === 'uk-spec-competency-model'
+    ? [] // No suggestions for UK-SPEC model
+    : defaultActions;
+
+  // Don't render anything if no suggestions
+  if (suggestedActions.length === 0) {
+    return null;
+  }
 
   return (
     <div
@@ -82,6 +121,8 @@ export const SuggestedActions = memo(
   (prevProps, nextProps) => {
     if (prevProps.chatId !== nextProps.chatId) return false;
     if (prevProps.selectedVisibilityType !== nextProps.selectedVisibilityType)
+      return false;
+    if (prevProps.selectedChatModel !== nextProps.selectedChatModel)
       return false;
 
     return true;

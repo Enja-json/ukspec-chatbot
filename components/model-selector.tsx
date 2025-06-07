@@ -56,9 +56,19 @@ export function ModelSelector({
         <Button
           data-testid="model-selector"
           variant="outline"
-          className="md:px-2 md:h-[34px]"
+          className="md:px-2 md:h-[34px] relative"
         >
           {selectedChatModel?.name}
+          {optimisticModelId === 'uk-spec-competency-model' && (
+            <span className="inline-flex items-center rounded-full bg-blue-50 px-2 py-1 text-xs font-medium text-blue-700 ring-1 ring-inset ring-blue-700/10 dark:bg-blue-400/10 dark:text-blue-400 dark:ring-blue-400/30 ml-2">
+              UK-SPEC
+            </span>
+          )}
+          {optimisticModelId === 'mini-mentor-model' && (
+            <span className="inline-flex items-center rounded-full bg-green-50 px-2 py-1 text-xs font-medium text-green-700 ring-1 ring-inset ring-green-700/10 dark:bg-green-400/10 dark:text-green-400 dark:ring-green-400/30 ml-2">
+              MENTOR
+            </span>
+          )}
           <ChevronDownIcon />
         </Button>
       </DropdownMenuTrigger>
