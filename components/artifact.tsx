@@ -68,6 +68,7 @@ function PureArtifact({
   votes,
   isReadonly,
   selectedVisibilityType,
+  selectedChatModel,
 }: {
   chatId: string;
   input: string;
@@ -84,6 +85,7 @@ function PureArtifact({
   reload: UseChatHelpers['reload'];
   isReadonly: boolean;
   selectedVisibilityType: VisibilityType;
+  selectedChatModel: string;
 }) {
   const { artifact, setArtifact, metadata, setMetadata } = useArtifact();
 
@@ -339,6 +341,7 @@ function PureArtifact({
                     className="bg-background dark:bg-muted"
                     setMessages={setMessages}
                     selectedVisibilityType={selectedVisibilityType}
+                    selectedChatModel={selectedChatModel}
                   />
                 </form>
               </div>
@@ -508,6 +511,8 @@ export const Artifact = memo(PureArtifact, (prevProps, nextProps) => {
   if (prevProps.input !== nextProps.input) return false;
   if (!equal(prevProps.messages, nextProps.messages.length)) return false;
   if (prevProps.selectedVisibilityType !== nextProps.selectedVisibilityType)
+    return false;
+  if (prevProps.selectedChatModel !== nextProps.selectedChatModel)
     return false;
 
   return true;
