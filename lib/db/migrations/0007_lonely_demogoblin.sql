@@ -1,0 +1,1 @@
+ALTER TABLE "Chat" ADD COLUMN "selectedChatModel" varchar(64) DEFAULT 'mini-mentor-model';

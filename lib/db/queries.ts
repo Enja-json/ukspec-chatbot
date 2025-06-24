@@ -27,6 +27,14 @@ import {
   type DBMessage,
   type Chat,
   stream,
+  competencyCode,
+  competencyTask,
+  taskCompetency,
+  taskEvidence,
+  type CompetencyCode,
+  type CompetencyTask,
+  type TaskCompetency,
+  type TaskEvidence,
 } from './schema';
 import type { ArtifactKind } from '@/components/artifact';
 import { generateUUID } from '../utils';
@@ -49,6 +57,23 @@ export async function getUser(email: string): Promise<Array<User>> {
     throw new ChatSDKError(
       'bad_request:database',
       'Failed to get user by email',
+    );
+  }
+}
+
+export async function getUserById(id: string) {
+  try {
+    const [result] = await db
+      .select()
+      .from(user)
+      .where(eq(user.id, id))
+      .limit(1);
+    
+    return result;
+  } catch (error) {
+    throw new ChatSDKError(
+      'bad_request:database',
+      'Failed to get user by ID',
     );
   }
 }
@@ -85,11 +110,13 @@ export async function saveChat({
   userId,
   title,
   visibility,
+  selectedChatModel,
 }: {
   id: string;
   userId: string;
   title: string;
   visibility: VisibilityType;
+  selectedChatModel?: string;
 }) {
   try {
     return await db.insert(chat).values({
@@ -98,6 +125,7 @@ export async function saveChat({
       userId,
       title,
       visibility,
+      selectedChatModel,
     });
   } catch (error) {
     throw new ChatSDKError('bad_request:database', 'Failed to save chat');
@@ -500,6 +528,39 @@ export async function getMessageCountByUserId({
   }
 }
 
+export async function getMessageCountByUserIdAndModel({
+  id,
+  modelId,
+  differenceInDays,
+}: { id: string; modelId: string; differenceInDays: number }) {
+  try {
+    const timeAgo = new Date(
+      Date.now() - differenceInDays * 24 * 60 * 60 * 1000,
+    );
+
+    const [stats] = await db
+      .select({ count: count(message.id) })
+      .from(message)
+      .innerJoin(chat, eq(message.chatId, chat.id))
+      .where(
+        and(
+          eq(chat.userId, id),
+          eq(chat.selectedChatModel, modelId),
+          gte(message.createdAt, timeAgo),
+          eq(message.role, 'user'),
+        ),
+      )
+      .execute();
+
+    return stats?.count ?? 0;
+  } catch (error) {
+    throw new ChatSDKError(
+      'bad_request:database',
+      'Failed to get message count by user id and model',
+    );
+  }
+}
+
 export async function createStreamId({
   streamId,
   chatId,
@@ -533,6 +594,527 @@ export async function getStreamIdsByChatId({ chatId }: { chatId: string }) {
     throw new ChatSDKError(
       'bad_request:database',
       'Failed to get stream ids by chat id',
+    );
+  }
+}
+
+export async function getUserByStripeCustomerId(stripeCustomerId: string) {
+  try {
+    const [result] = await db
+      .select()
+      .from(user)
+      .where(eq(user.stripeCustomerId, stripeCustomerId))
+      .limit(1);
+    
+    return result;
+  } catch (error) {
+    throw new ChatSDKError(
+      'bad_request:database',
+      'Failed to get user by Stripe customer ID',
+    );
+  }
+}
+
+export async function updateUserSubscription({
+  userId,
+  subscriptionId,
+  subscriptionStatus,
+  trialEndsAt,
+}: {
+  userId: string;
+  subscriptionId: string | null;
+  subscriptionStatus: 'none' | 'trial' | 'active' | 'cancelled';
+  trialEndsAt: Date | null;
+}) {
+  try {
+    return await db
+      .update(user)
+      .set({
+        subscriptionId,
+        subscriptionStatus,
+        trialEndsAt,
+      })
+      .where(eq(user.id, userId));
+  } catch (error) {
+    throw new ChatSDKError(
+      'bad_request:database',
+      'Failed to update user subscription',
+    );
+  }
+}
+
+export async function updateUserStripeCustomerId(userId: string, stripeCustomerId: string) {
+  try {
+    return await db
+      .update(user)
+      .set({ stripeCustomerId })
+      .where(eq(user.id, userId));
+  } catch (error) {
+    throw new ChatSDKError(
+      'bad_request:database',
+      'Failed to update user Stripe customer ID',
+    );
+  }
+}
+
+// Competency Log System Functions
+
+export async function getAllCompetencyCodes(): Promise<CompetencyCode[]> {
+  try {
+    return await db
+      .select()
+      .from(competencyCode)
+      .orderBy(competencyCode.id);
+  } catch (error) {
+    throw new ChatSDKError(
+      'bad_request:database',
+      'Failed to get competency codes',
+    );
+  }
+}
+
+export async function getCompetencyCodesByCategory(category: 'A' | 'B' | 'C' | 'D' | 'E'): Promise<CompetencyCode[]> {
+  try {
+    return await db
+      .select()
+      .from(competencyCode)
+      .where(eq(competencyCode.category, category))
+      .orderBy(competencyCode.id);
+  } catch (error) {
+    throw new ChatSDKError(
+      'bad_request:database',
+      'Failed to get competency codes by category',
+    );
+  }
+}
+
+export async function createCompetencyTask({
+  userId,
+  title,
+  description,
+  source = 'manual',
+  chatId,
+}: {
+  userId: string;
+  title: string;
+  description: string;
+  source?: 'manual' | 'ai_analysis';
+  chatId?: string;
+}) {
+  try {
+    const [task] = await db
+      .insert(competencyTask)
+      .values({
+        userId,
+        title,
+        description,
+        source,
+        chatId,
+      })
+      .returning();
+    
+    return task;
+  } catch (error) {
+    throw new ChatSDKError(
+      'bad_request:database',
+      'Failed to create competency task',
+    );
+  }
+}
+
+export async function createCompetencyTaskWithDetails({
+  userId,
+  title,
+  description,
+  competencyCodeIds,
+  evidenceFiles,
+  source = 'manual',
+  chatId,
+}: {
+  userId: string;
+  title: string;
+  description: string;
+  competencyCodeIds: string[];
+  evidenceFiles: File[];
+  source?: 'manual' | 'ai_analysis';
+  chatId?: string;
+}) {
+  try {
+    // First, verify all competency codes exist
+    const existingCodes = await db
+      .select({ id: competencyCode.id })
+      .from(competencyCode)
+      .where(inArray(competencyCode.id, competencyCodeIds));
+    
+    const existingCodeIds = existingCodes.map(code => code.id);
+    const invalidCodes = competencyCodeIds.filter(id => !existingCodeIds.includes(id));
+    
+    if (invalidCodes.length > 0) {
+      throw new Error(`Invalid competency codes: ${invalidCodes.join(', ')}`);
+    }
+
+    // Create the task
+    const [task] = await db
+      .insert(competencyTask)
+      .values({
+        userId,
+        title,
+        description,
+        source,
+        chatId,
+      })
+      .returning();
+
+    // Add competencies to the task
+    if (competencyCodeIds.length > 0) {
+      await db
+        .insert(taskCompetency)
+        .values(
+          competencyCodeIds.map((competencyCodeId) => ({
+            taskId: task.id,
+            competencyCodeId,
+            confidenceScore: null, // Will be set by user later if needed
+            notes: null,
+          }))
+        );
+    }
+
+    // Handle file uploads (simplified - in production you'd upload to cloud storage)
+    const evidenceRecords = [];
+    for (const file of evidenceFiles) {
+      // In a real implementation, you would:
+      // 1. Upload file to cloud storage (AWS S3, etc.)
+      // 2. Get the permanent URL
+      // 3. Store the URL in the database
+      
+      // For now, we'll just store metadata with a placeholder URL
+      const fileUrl = `/uploads/tasks/${task.id}/${file.name}`; // Placeholder
+      
+      const [evidence] = await db
+        .insert(taskEvidence)
+        .values({
+          taskId: task.id,
+          fileName: file.name,
+          fileSize: file.size,
+          mimeType: file.type,
+          fileUrl,
+        })
+        .returning();
+        
+      evidenceRecords.push(evidence);
+    }
+
+    return {
+      task,
+      competencies: competencyCodeIds,
+      evidence: evidenceRecords,
+    };
+  } catch (error) {
+    throw new ChatSDKError(
+      'bad_request:database',
+      'Failed to create competency task with details',
+    );
+  }
+}
+
+export async function addTaskCompetencies({
+  taskId,
+  competencies,
+}: {
+  taskId: string;
+  competencies: Array<{
+    competencyCodeId: string;
+    confidenceScore?: number;
+    notes?: string;
+  }>;
+}) {
+  try {
+    return await db
+      .insert(taskCompetency)
+      .values(
+        competencies.map((comp) => ({
+          taskId,
+          competencyCodeId: comp.competencyCodeId,
+          confidenceScore: comp.confidenceScore?.toString(),
+          notes: comp.notes,
+        }))
+      )
+      .returning();
+  } catch (error) {
+    throw new ChatSDKError(
+      'bad_request:database',
+      'Failed to add task competencies',
+    );
+  }
+}
+
+export async function addTaskEvidence({
+  taskId,
+  fileName,
+  fileSize,
+  mimeType,
+  fileUrl,
+}: {
+  taskId: string;
+  fileName: string;
+  fileSize: number;
+  mimeType: string;
+  fileUrl: string;
+}) {
+  try {
+    const [evidence] = await db
+      .insert(taskEvidence)
+      .values({
+        taskId,
+        fileName,
+        fileSize,
+        mimeType,
+        fileUrl,
+      })
+      .returning();
+    
+    return evidence;
+  } catch (error) {
+    throw new ChatSDKError(
+      'bad_request:database',
+      'Failed to add task evidence',
+    );
+  }
+}
+
+export async function getCompetencyTasksByUserId(userId: string) {
+  try {
+    // Get all tasks for the user
+    const tasks = await db
+      .select({
+        id: competencyTask.id,
+        title: competencyTask.title,
+        description: competencyTask.description,
+        source: competencyTask.source,
+        chatId: competencyTask.chatId,
+        createdAt: competencyTask.createdAt,
+        updatedAt: competencyTask.updatedAt,
+      })
+      .from(competencyTask)
+      .where(eq(competencyTask.userId, userId))
+      .orderBy(desc(competencyTask.createdAt));
+
+    // For each task, fetch competencies and evidence
+    const tasksWithDetails = await Promise.all(
+      tasks.map(async (task) => {
+        // Get competencies for this task
+        const competencies = await db
+          .select({
+            competencyCodeId: taskCompetency.competencyCodeId,
+            confidenceScore: taskCompetency.confidenceScore,
+            notes: taskCompetency.notes,
+            createdAt: taskCompetency.createdAt,
+            code: {
+              id: competencyCode.id,
+              category: competencyCode.category,
+              title: competencyCode.title,
+              description: competencyCode.description,
+            },
+          })
+          .from(taskCompetency)
+          .innerJoin(competencyCode, eq(taskCompetency.competencyCodeId, competencyCode.id))
+          .where(eq(taskCompetency.taskId, task.id))
+          .orderBy(taskCompetency.competencyCodeId);
+        
+        // Get evidence for this task
+        const evidence = await db
+          .select()
+          .from(taskEvidence)
+          .where(eq(taskEvidence.taskId, task.id))
+          .orderBy(taskEvidence.uploadedAt);
+        
+        return {
+          ...task,
+          competencies: competencies || [],
+          evidence: evidence || [],
+        };
+      })
+    );
+
+    return tasksWithDetails;
+  } catch (error) {
+    throw new ChatSDKError(
+      'bad_request:database',
+      'Failed to get competency tasks by user ID',
+    );
+  }
+}
+
+export async function getCompetencyTaskById(taskId: string) {
+  try {
+    const [task] = await db
+      .select()
+      .from(competencyTask)
+      .where(eq(competencyTask.id, taskId))
+      .limit(1);
+    
+    if (!task) {
+      throw new ChatSDKError(
+        'not_found:database',
+        'Competency task not found',
+      );
+    }
+    
+    // Get competencies for this task
+    const competencies = await db
+      .select({
+        competencyCodeId: taskCompetency.competencyCodeId,
+        confidenceScore: taskCompetency.confidenceScore,
+        notes: taskCompetency.notes,
+        createdAt: taskCompetency.createdAt,
+        code: {
+          id: competencyCode.id,
+          category: competencyCode.category,
+          title: competencyCode.title,
+          description: competencyCode.description,
+        },
+      })
+      .from(taskCompetency)
+      .innerJoin(competencyCode, eq(taskCompetency.competencyCodeId, competencyCode.id))
+      .where(eq(taskCompetency.taskId, taskId))
+      .orderBy(taskCompetency.competencyCodeId);
+    
+    // Get evidence for this task
+    const evidence = await db
+      .select()
+      .from(taskEvidence)
+      .where(eq(taskEvidence.taskId, taskId))
+      .orderBy(taskEvidence.uploadedAt);
+    
+    return {
+      ...task,
+      competencies,
+      evidence,
+    };
+  } catch (error) {
+    throw new ChatSDKError(
+      'bad_request:database',
+      'Failed to get competency task by ID',
+    );
+  }
+}
+
+export async function updateCompetencyTask({
+  taskId,
+  title,
+  description,
+  competencyCodeIds,
+}: {
+  taskId: string;
+  title: string;
+  description: string;
+  competencyCodeIds: string[];
+}) {
+  try {
+    // Update the task
+    const [updatedTask] = await db
+      .update(competencyTask)
+      .set({
+        title,
+        description,
+        updatedAt: new Date(),
+      })
+      .where(eq(competencyTask.id, taskId))
+      .returning();
+
+    if (!updatedTask) {
+      throw new ChatSDKError(
+        'not_found:database',
+        'Task not found',
+      );
+    }
+
+    // Delete existing competencies
+    await db
+      .delete(taskCompetency)
+      .where(eq(taskCompetency.taskId, taskId));
+
+    // Add new competencies
+    if (competencyCodeIds.length > 0) {
+      await db
+        .insert(taskCompetency)
+        .values(
+          competencyCodeIds.map((competencyCodeId) => ({
+            taskId,
+            competencyCodeId,
+            confidenceScore: null,
+            notes: null,
+          }))
+        );
+    }
+
+    return updatedTask;
+  } catch (error) {
+    throw new ChatSDKError(
+      'bad_request:database',
+      'Failed to update competency task',
+    );
+  }
+}
+
+export async function deleteCompetencyTask(taskId: string, userId: string) {
+  try {
+    // Verify the task belongs to the user
+    const [task] = await db
+      .select()
+      .from(competencyTask)
+      .where(and(eq(competencyTask.id, taskId), eq(competencyTask.userId, userId)))
+      .limit(1);
+    
+    if (!task) {
+      throw new ChatSDKError(
+        'not_found:database',
+        'Competency task not found or unauthorized',
+      );
+    }
+    
+    // Delete task (cascading will handle competencies and evidence)
+    return await db
+      .delete(competencyTask)
+      .where(eq(competencyTask.id, taskId))
+      .returning();
+  } catch (error) {
+    throw new ChatSDKError(
+      'bad_request:database',
+      'Failed to delete competency task',
+    );
+  }
+}
+
+export async function getCompetencyStatsByUserId(userId: string) {
+  try {
+    // Get total tasks
+    const [totalTasks] = await db
+      .select({ count: count(competencyTask.id) })
+      .from(competencyTask)
+      .where(eq(competencyTask.userId, userId));
+    
+    // Get competency distribution by category
+    const competencyDistribution = await db
+      .select({
+        category: competencyCode.category,
+        count: count(taskCompetency.competencyCodeId),
+      })
+      .from(taskCompetency)
+      .innerJoin(competencyTask, eq(taskCompetency.taskId, competencyTask.id))
+      .innerJoin(competencyCode, eq(taskCompetency.competencyCodeId, competencyCode.id))
+      .where(eq(competencyTask.userId, userId))
+      .groupBy(competencyCode.category)
+      .orderBy(competencyCode.category);
+    
+    return {
+      totalTasks: totalTasks?.count ?? 0,
+      competencyDistribution,
+    };
+  } catch (error) {
+    throw new ChatSDKError(
+      'bad_request:database',
+      'Failed to get competency stats by user ID',
     );
   }
 }

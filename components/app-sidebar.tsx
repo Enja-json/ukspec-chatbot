@@ -64,6 +64,25 @@ export function AppSidebar({ user }: { user: User | undefined }) {
         </SidebarMenu>
       </SidebarHeader>
       <SidebarContent>
+        <SidebarMenu>
+          <div className="px-2 py-1 text-xs text-sidebar-foreground/50">
+            Tools
+          </div>
+          <div className="px-2">
+            <Link
+              href="/competency-log"
+              onClick={() => {
+                setOpenMobile(false);
+              }}
+              className="flex items-center gap-3 px-2 py-2 text-sm text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground rounded-md transition-colors"
+            >
+              <div className="w-4 h-4 flex items-center justify-center">
+                <div className="w-3 h-3 bg-current rounded-sm opacity-60"></div>
+              </div>
+              Competency Log
+            </Link>
+          </div>
+        </SidebarMenu>
         <SidebarHistory user={user} />
       </SidebarContent>
       <SidebarFooter>{user && <SidebarUserNav user={user} />}</SidebarFooter>

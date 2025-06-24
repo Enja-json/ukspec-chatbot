@@ -21,6 +21,8 @@ import { useChatVisibility } from '@/hooks/use-chat-visibility';
 import { useAutoResume } from '@/hooks/use-auto-resume';
 import { ChatSDKError } from '@/lib/errors';
 import { GuestNotification } from './guest-notification';
+import { PaywallModal } from './paywall-modal';
+import { usePaywall } from '@/hooks/use-paywall';
 
 export function Chat({
   id,
@@ -40,6 +42,7 @@ export function Chat({
   autoResume: boolean;
 }) {
   const { mutate } = useSWRConfig();
+  const { isPaywallOpen, showPaywall, hidePaywall, paywallTrigger, startTrial, isLoading: paywallLoading } = usePaywall();
 
   const { visibilityType } = useChatVisibility({
     chatId: id,
@@ -80,6 +83,11 @@ export function Chat({
           type: 'error',
           description: error.message,
         });
+        
+        // Show paywall modal if rate limit is hit
+        if (error.type === 'rate_limit') {
+          showPaywall('rate-limit');
+        }
       }
     },
   });
@@ -180,6 +188,14 @@ export function Chat({
         isReadonly={isReadonly}
         selectedVisibilityType={visibilityType}
         selectedChatModel={initialChatModel}
+      />
+
+      <PaywallModal
+        isOpen={isPaywallOpen}
+        onClose={hidePaywall}
+        trigger={paywallTrigger || 'rate-limit'}
+        onStartTrial={startTrial}
+        isLoading={paywallLoading}
       />
     </>
   );

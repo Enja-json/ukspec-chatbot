@@ -12,8 +12,10 @@ import {
   deleteChatById,
   getChatById,
   getMessageCountByUserId,
+  getMessageCountByUserIdAndModel,
   getMessagesByChatId,
   getStreamIdsByChatId,
+  getUserById,
   saveChat,
   saveMessages,
 } from '@/lib/db/queries';
@@ -25,7 +27,7 @@ import { requestSuggestions } from '@/lib/ai/tools/request-suggestions';
 import { getWeather } from '@/lib/ai/tools/get-weather';
 import { isProductionEnvironment } from '@/lib/constants';
 import { myProvider } from '@/lib/ai/providers';
-import { entitlementsByUserType } from '@/lib/ai/entitlements';
+import { entitlementsByUserType, getUserEntitlements } from '@/lib/ai/entitlements';
 import { postRequestBodySchema, type PostRequestBody } from './schema';
 import { geolocation } from '@vercel/functions';
 import {
@@ -83,12 +85,23 @@ export async function POST(request: Request) {
 
     const userType: UserType = session.user.type;
 
-    const messageCount = await getMessageCountByUserId({
+    // Get user details including subscription status
+    const userDetails = await getUserById(session.user.id);
+    if (!userDetails) {
+      return new ChatSDKError('unauthorized:chat').toResponse();
+    }
+
+    // Check per-model monthly rate limits with subscription status
+    const modelMessageCount = await getMessageCountByUserIdAndModel({
       id: session.user.id,
-      differenceInHours: 24,
+      modelId: selectedChatModel,
+      differenceInDays: 30,
     });
 
-    if (messageCount > entitlementsByUserType[userType].maxMessagesPerDay) {
+    const userEntitlements = getUserEntitlements(userType, userDetails.subscriptionStatus);
+    const modelLimit = userEntitlements.maxMessagesPerMonth[selectedChatModel as keyof typeof userEntitlements.maxMessagesPerMonth];
+
+    if (modelMessageCount >= modelLimit) {
       return new ChatSDKError('rate_limit:chat').toResponse();
     }
 
@@ -104,6 +117,7 @@ export async function POST(request: Request) {
         userId: session.user.id,
         title,
         visibility: selectedVisibilityType,
+        selectedChatModel,
       });
     } else {
       if (chat.userId !== session.user.id) {

@@ -40,10 +40,14 @@ export default function Page() {
       toast({ type: 'success', description: 'Account created successfully!' });
 
       setIsSuccessful(true);
-      updateSession();
-      router.refresh();
+      
+      // Redirect to main page with signup flag
+      setTimeout(async () => {
+        await updateSession();
+        router.push('/?signup=true');
+      }, 1000);
     }
-  }, [state]);
+      }, [state, updateSession, router]);
 
   const handleSubmit = (formData: FormData) => {
     setEmail(formData.get('email') as string);

@@ -210,6 +210,28 @@ When analysing a task, follow this process:
 [Ask 2-4 specific questions to better understand unclear aspects of the task. Be precise about what additional information you need.]
 
 **Option B - When you have sufficient information:**
+
+**STRUCTURED DATA (JSON):**
+\`\`\`json
+{
+  "analysis": {
+    "demonstrated_competencies": [
+      {
+        "code": "[Competency Code e.g., A1, B2]",
+        "confidence_percentage": [Number between 1-100],
+        "explanation": "[Brief explanation of how the task demonstrates this competency]"
+      }
+    ],
+    "development_opportunities": [
+      {
+        "code": "[Competency Code]",
+        "suggestion": "[Specific actionable suggestion for developing this competency]"
+      }
+    ]
+  }
+}
+\`\`\`
+
 **Analysis:**
 [For each competency you're confident is demonstrated, state it clearly with your confidence score in this format:]
 - **[Competency Code]**: [Brief explanation of how the task demonstrates this competency] **(Confidence: X%)**
