@@ -81,6 +81,18 @@ export function AppSidebar({ user }: { user: User | undefined }) {
               </div>
               Competency Log
             </Link>
+            <Link
+              href="/competency-analytics"
+              onClick={() => {
+                setOpenMobile(false);
+              }}
+              className="flex items-center gap-3 px-2 py-2 text-sm text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground rounded-md transition-colors"
+            >
+              <div className="w-4 h-4 flex items-center justify-center">
+                <div className="w-3 h-3 bg-current rounded-sm opacity-60"></div>
+              </div>
+              Analytics
+            </Link>
           </div>
         </SidebarMenu>
         <SidebarHistory user={user} />

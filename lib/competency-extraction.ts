@@ -1,4 +1,4 @@
-import { getAllCompetencyCodes } from './db/queries';
+// import { getAllCompetencyCodes } from './db/queries';
 
 export interface DemonstratedCompetency {
   code: string;
@@ -189,7 +189,9 @@ export function convertToTaskCompetencies(demonstratedCompetencies: Demonstrated
 
 /**
  * Validates that all competency codes exist in the database
+ * Note: This function requires server-side access and is commented out for client compatibility
  */
+/*
 export async function validateCompetencyCodesExist(codes: string[]): Promise<{
   valid: string[];
   invalid: string[];
@@ -218,6 +220,7 @@ export async function validateCompetencyCodesExist(codes: string[]): Promise<{
     return { valid, invalid };
   }
 }
+*/
 
 /**
  * Extracts competency codes from natural language text (fallback method)

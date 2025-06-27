@@ -11,3 +11,19 @@ export const isTestEnvironment = Boolean(
 export const guestRegex = /^guest-\d+$/;
 
 export const DUMMY_PASSWORD = generateDummyPassword();
+
+export const competencyColors = {
+  A: '#ef4444', // Red-500 for Knowledge and Understanding
+  B: '#3b82f6', // Blue-500 for Design and Development
+  C: '#22c55e', // Green-500 for Responsibility and Management
+  D: '#f97316', // Orange-500 for Communication and Interpersonal Skills
+  E: '#a855f7', // Purple-500 for Professional Commitment
+} as const;
+
+export const competencyLabels = {
+  A: 'Knowledge & Understanding',
+  B: 'Design & Development',
+  C: 'Responsibility & Management',
+  D: 'Communication & Interpersonal',
+  E: 'Professional Commitment',
+} as const;

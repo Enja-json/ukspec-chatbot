@@ -35,6 +35,15 @@ interface CompetencyLogModalProps {
       competencyCodeId: string;
     }>;
   } | null;
+  aiAnalysisData?: {
+    taskTitle: string;
+    taskDescription: string;
+    demonstratedCompetencies: Array<{
+      code: string;
+      confidence_percentage: number;
+      explanation: string;
+    }>;
+  } | null;
 }
 
 interface TaskFormData {
@@ -74,7 +83,8 @@ export function CompetencyLogModal({
   onSubmit, 
   competencyCodes,
   isLoading = false,
-  editingTask = null
+  editingTask = null,
+  aiAnalysisData = null
 }: CompetencyLogModalProps) {
   const [formData, setFormData] = useState<TaskFormData>({
     title: editingTask?.title || '',
@@ -86,13 +96,20 @@ export function CompetencyLogModal({
   const [errors, setErrors] = useState<FormErrors>({});
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
 
-  // Update form data when editingTask changes
+  // Update form data when editingTask or aiAnalysisData changes
   useEffect(() => {
     if (editingTask) {
       setFormData({
         title: editingTask.title,
         description: editingTask.description,
         competencyCodeIds: editingTask.competencies.map(c => c.competencyCodeId),
+        evidenceFiles: [],
+      });
+    } else if (aiAnalysisData) {
+      setFormData({
+        title: aiAnalysisData.taskTitle,
+        description: aiAnalysisData.taskDescription,
+        competencyCodeIds: aiAnalysisData.demonstratedCompetencies.map(c => c.code),
         evidenceFiles: [],
       });
     } else {
@@ -105,7 +122,7 @@ export function CompetencyLogModal({
     }
     setErrors({});
     setSelectedCategory('all');
-  }, [editingTask]);
+  }, [editingTask, aiAnalysisData]);
 
   // Group competency codes by category
   const groupedCompetencies = competencyCodes.reduce((acc, code) => {
@@ -216,8 +233,21 @@ export function CompetencyLogModal({
       <AlertDialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
         <AlertDialogHeader>
           <AlertDialogTitle className="text-xl font-semibold">
-            {editingTask ? 'Edit Competency Task' : 'Add Competency Task'}
+            {editingTask 
+              ? 'Edit Competency Task' 
+              : aiAnalysisData 
+                ? 'Add Competency Task (AI Analysis)' 
+                : 'Add Competency Task'
+            }
           </AlertDialogTitle>
+          {aiAnalysisData && (
+            <div className="text-sm text-muted-foreground bg-blue-50 dark:bg-blue-950 p-3 rounded-lg">
+              <div className="flex items-center gap-2">
+                <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+                <span>This task has been pre-populated with AI competency analysis. You can review and modify the suggestions before saving.</span>
+              </div>
+            </div>
+          )}
         </AlertDialogHeader>
 
         <form onSubmit={handleSubmit} className="space-y-6">
@@ -281,25 +311,47 @@ export function CompetencyLogModal({
                       {category}: {categoryNames[category as keyof typeof categoryNames]}
                     </h4>
                     <div className="grid gap-2">
-                      {codes.map((code) => (
-                        <button
-                          key={code.id}
-                          type="button"
-                          onClick={() => toggleCompetency(code.id)}
-                          className={`
-                            p-3 rounded-lg border text-sm text-left transition-all
-                            ${formData.competencyCodeIds.includes(code.id) 
-                              ? categoryColours[code.category] 
-                              : 'bg-background hover:bg-muted border-border'
-                            }
-                          `}
-                        >
-                          <div className="font-medium">{code.id}: {code.title}</div>
-                          <div className="text-xs text-muted-foreground mt-1">
-                            {code.description}
-                          </div>
-                        </button>
-                      ))}
+                      {codes.map((code) => {
+                        // Check if this competency was suggested by AI analysis
+                        const aiSuggestion = aiAnalysisData?.demonstratedCompetencies.find(
+                          comp => comp.code === code.id
+                        );
+                        
+                        return (
+                          <button
+                            key={code.id}
+                            type="button"
+                            onClick={() => toggleCompetency(code.id)}
+                            className={`
+                              p-3 rounded-lg border text-sm text-left transition-all relative
+                              ${formData.competencyCodeIds.includes(code.id) 
+                                ? categoryColours[code.category] 
+                                : 'bg-background hover:bg-muted border-border'
+                              }
+                            `}
+                          >
+                            <div className="flex items-center justify-between">
+                              <div className="font-medium">{code.id}: {code.title}</div>
+                              {aiSuggestion && (
+                                <div className="flex items-center gap-1 text-xs">
+                                  <div className="w-1.5 h-1.5 bg-blue-500 rounded-full"></div>
+                                  <span className="text-blue-600 dark:text-blue-400 font-medium">
+                                    AI: {aiSuggestion.confidence_percentage}%
+                                  </span>
+                                </div>
+                              )}
+                            </div>
+                            <div className="text-xs text-muted-foreground mt-1">
+                              {code.description}
+                            </div>
+                            {aiSuggestion && (
+                              <div className="text-xs text-blue-600 dark:text-blue-400 mt-2 bg-blue-50 dark:bg-blue-950 p-1.5 rounded">
+                                <strong>AI Analysis:</strong> {aiSuggestion.explanation}
+                              </div>
+                            )}
+                          </button>
+                        );
+                      })}
                     </div>
                   </div>
                 ))}

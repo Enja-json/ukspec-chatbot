@@ -20,6 +20,15 @@ const createTaskSchema = z.object({
   title: z.string().min(3, 'Title must be at least 3 characters').max(200, 'Title must be less than 200 characters'),
   description: z.string().min(10, 'Description must be at least 10 characters').max(2000, 'Description must be less than 2000 characters'),
   competencyCodeIds: z.array(z.string()).min(1, 'At least one competency must be selected').max(10, 'Maximum 10 competencies allowed'),
+  // AI analysis fields (optional)
+  chatId: z.string().uuid().optional(),
+  messageId: z.string().uuid().optional(),
+  aiModel: z.string().optional(),
+  aiCompetencyData: z.array(z.object({
+    competencyCodeId: z.string(),
+    confidenceScore: z.number().min(0).max(100).optional(),
+    aiExplanation: z.string().optional(),
+  })).optional(),
 });
 
 export async function POST(request: NextRequest) {
@@ -39,6 +48,13 @@ export async function POST(request: NextRequest) {
     const title = formData.get('title') as string;
     const description = formData.get('description') as string;
     const competencyCodeIdsJson = formData.get('competencyCodeIds') as string;
+    
+    // Extract AI analysis fields (optional)
+    const chatId = formData.get('chatId') as string | null;
+    const messageId = formData.get('messageId') as string | null;
+    const aiModel = formData.get('aiModel') as string | null;
+    const aiCompetencyDataJson = formData.get('aiCompetencyData') as string | null;
+    const aiResponseDataJson = formData.get('aiResponseData') as string | null;
 
     // Parse competency codes
     let competencyCodeIds: string[];
@@ -51,11 +67,46 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Parse AI competency data if provided
+    let aiCompetencyData: Array<{
+      competencyCodeId: string;
+      confidenceScore?: number;
+      aiExplanation?: string;
+    }> | undefined;
+    
+    if (aiCompetencyDataJson) {
+      try {
+        aiCompetencyData = JSON.parse(aiCompetencyDataJson);
+      } catch (error) {
+        return NextResponse.json(
+          { error: 'Invalid AI competency data format' },
+          { status: 400 }
+        );
+      }
+    }
+
+    // Parse AI response data if provided
+    let aiResponseData: any;
+    if (aiResponseDataJson) {
+      try {
+        aiResponseData = JSON.parse(aiResponseDataJson);
+      } catch (error) {
+        return NextResponse.json(
+          { error: 'Invalid AI response data format' },
+          { status: 400 }
+        );
+      }
+    }
+
     // Validate basic form data
     const validationResult = createTaskSchema.safeParse({
       title,
       description,
       competencyCodeIds,
+      chatId: chatId || undefined,
+      messageId: messageId || undefined,
+      aiModel: aiModel || undefined,
+      aiCompetencyData,
     });
 
     if (!validationResult.success) {
@@ -112,6 +163,16 @@ export async function POST(request: NextRequest) {
       competencyCodeIds: validationResult.data.competencyCodeIds,
       evidenceFiles,
       userId: session.user.id!,
+      // AI analysis fields
+      source: (chatId && messageId) ? 'ai_analysis' : 'manual',
+      chatId: validationResult.data.chatId,
+      messageId: validationResult.data.messageId,
+      aiModel: validationResult.data.aiModel,
+      aiResponseData,
+      aiCompetencyData: aiCompetencyData?.map(comp => ({
+        ...comp,
+        sourceType: 'ai_suggested' as const,
+      })),
     });
 
     return NextResponse.json({

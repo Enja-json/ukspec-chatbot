@@ -111,4 +111,22 @@ export function containsDevelopmentSuggestions(responseText: string): boolean {
   ];
   
   return developmentPatterns.some(pattern => pattern.test(responseText));
+}
+
+/**
+ * Removes JSON blocks from UK-SPEC competency analysis responses
+ * Returns only the user-friendly natural language content
+ */
+export function removeJsonFromResponse(responseText: string): string {
+  // Remove JSON code blocks (```json ... ```)
+  const withoutJson = responseText.replace(/```json\s*[\s\S]*?\s*```/g, '').trim();
+  
+  // Clean up any extra whitespace or empty lines left behind
+  const cleaned = withoutJson
+    .replace(/\n\s*\n\s*\n/g, '\n\n') // Replace multiple empty lines with double line break
+    .replace(/^\s*\n+/, '') // Remove leading empty lines
+    .replace(/\n+\s*$/, '') // Remove trailing empty lines
+    .trim();
+  
+  return cleaned;
 } 

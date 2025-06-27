@@ -11,6 +11,7 @@ import {
   inArray,
   lt,
   type SQL,
+  sql,
 } from 'drizzle-orm';
 import { drizzle } from 'drizzle-orm/postgres-js';
 import postgres from 'postgres';
@@ -730,6 +731,10 @@ export async function createCompetencyTaskWithDetails({
   evidenceFiles,
   source = 'manual',
   chatId,
+  messageId,
+  aiModel,
+  aiResponseData,
+  aiCompetencyData,
 }: {
   userId: string;
   title: string;
@@ -738,6 +743,15 @@ export async function createCompetencyTaskWithDetails({
   evidenceFiles: File[];
   source?: 'manual' | 'ai_analysis';
   chatId?: string;
+  messageId?: string;
+  aiModel?: string;
+  aiResponseData?: any;
+  aiCompetencyData?: Array<{
+    competencyCodeId: string;
+    confidenceScore?: number;
+    aiExplanation?: string;
+    sourceType?: 'ai_suggested' | 'manual_added' | 'ai_modified';
+  }>;
 }) {
   try {
     // First, verify all competency codes exist
@@ -762,21 +776,31 @@ export async function createCompetencyTaskWithDetails({
         description,
         source,
         chatId,
+        messageId,
+        aiModel,
+        aiResponseData,
       })
       .returning();
 
-    // Add competencies to the task
+    // Add competencies to the task with AI data if available
     if (competencyCodeIds.length > 0) {
+      const competencyValues = competencyCodeIds.map((competencyCodeId) => {
+        // Find AI data for this competency
+        const aiData = aiCompetencyData?.find(c => c.competencyCodeId === competencyCodeId);
+        
+        return {
+          taskId: task.id,
+          competencyCodeId,
+          confidenceScore: aiData?.confidenceScore?.toString() || null,
+          notes: null, // User can add notes later
+          aiExplanation: aiData?.aiExplanation || null,
+          sourceType: aiData?.sourceType || 'manual_added',
+        };
+      });
+
       await db
         .insert(taskCompetency)
-        .values(
-          competencyCodeIds.map((competencyCodeId) => ({
-            taskId: task.id,
-            competencyCodeId,
-            confidenceScore: null, // Will be set by user later if needed
-            notes: null,
-          }))
-        );
+        .values(competencyValues);
     }
 
     // Handle file uploads (simplified - in production you'd upload to cloud storage)
@@ -813,6 +837,61 @@ export async function createCompetencyTaskWithDetails({
     throw new ChatSDKError(
       'bad_request:database',
       'Failed to create competency task with details',
+    );
+  }
+}
+
+export async function createCompetencyTaskFromAIAnalysis({
+  userId,
+  chatId,
+  messageId,
+  aiModel,
+  taskTitle,
+  taskDescription,
+  demonstratedCompetencies,
+  aiResponseData,
+}: {
+  userId: string;
+  chatId: string;
+  messageId: string;
+  aiModel: string;
+  taskTitle: string;
+  taskDescription: string;
+  demonstratedCompetencies: Array<{
+    code: string;
+    confidence_percentage: number;
+    explanation: string;
+  }>;
+  aiResponseData: any;
+}) {
+  try {
+    // Extract competency codes and prepare AI data
+    const competencyCodeIds = demonstratedCompetencies.map(c => c.code);
+    const aiCompetencyData = demonstratedCompetencies.map(comp => ({
+      competencyCodeId: comp.code,
+      confidenceScore: comp.confidence_percentage,
+      aiExplanation: comp.explanation,
+      sourceType: 'ai_suggested' as const,
+    }));
+
+    // Create task using the enhanced function
+    return await createCompetencyTaskWithDetails({
+      userId,
+      title: taskTitle,
+      description: taskDescription,
+      competencyCodeIds,
+      evidenceFiles: [], // No files for AI-generated tasks initially
+      source: 'ai_analysis',
+      chatId,
+      messageId,
+      aiModel,
+      aiResponseData,
+      aiCompetencyData,
+    });
+  } catch (error) {
+    throw new ChatSDKError(
+      'bad_request:database',
+      'Failed to create competency task from AI analysis',
     );
   }
 }
@@ -1115,6 +1194,113 @@ export async function getCompetencyStatsByUserId(userId: string) {
     throw new ChatSDKError(
       'bad_request:database',
       'Failed to get competency stats by user ID',
+    );
+  }
+}
+
+export async function getDetailedCompetencyAnalytics(userId: string) {
+  try {
+    // Get total tasks and evidence count
+    const [taskStats] = await db
+      .select({ 
+        taskCount: count(competencyTask.id),
+      })
+      .from(competencyTask)
+      .where(eq(competencyTask.userId, userId));
+
+    const [evidenceStats] = await db
+      .select({ 
+        evidenceCount: count(taskEvidence.id),
+      })
+      .from(taskEvidence)
+      .innerJoin(competencyTask, eq(taskEvidence.taskId, competencyTask.id))
+      .where(eq(competencyTask.userId, userId));
+    
+    // Get competency distribution by category with detailed breakdown
+    const categoryDistribution = await db
+      .select({
+        category: competencyCode.category,
+        count: count(taskCompetency.competencyCodeId),
+        averageConfidence: sql<number>`ROUND(AVG(CAST(${taskCompetency.confidenceScore} AS DECIMAL)), 2)`,
+      })
+      .from(taskCompetency)
+      .innerJoin(competencyTask, eq(taskCompetency.taskId, competencyTask.id))
+      .innerJoin(competencyCode, eq(taskCompetency.competencyCodeId, competencyCode.id))
+      .where(eq(competencyTask.userId, userId))
+      .groupBy(competencyCode.category)
+      .orderBy(competencyCode.category);
+    
+    // Get individual competency code distribution
+    const competencyCodeDistribution = await db
+      .select({
+        competencyCodeId: competencyCode.id,
+        category: competencyCode.category,
+        title: competencyCode.title,
+        count: count(taskCompetency.competencyCodeId),
+        averageConfidence: sql<number>`ROUND(AVG(CAST(${taskCompetency.confidenceScore} AS DECIMAL)), 2)`,
+      })
+      .from(taskCompetency)
+      .innerJoin(competencyTask, eq(taskCompetency.taskId, competencyTask.id))
+      .innerJoin(competencyCode, eq(taskCompetency.competencyCodeId, competencyCode.id))
+      .where(eq(competencyTask.userId, userId))
+      .groupBy(competencyCode.id, competencyCode.category, competencyCode.title)
+      .orderBy(competencyCode.category, competencyCode.id);
+    
+    // Get monthly task creation trends (last 12 months)
+    const monthlyTrends = await db
+      .select({
+        month: sql<string>`to_char(${competencyTask.createdAt}, 'YYYY-MM')`,
+        taskCount: count(competencyTask.id),
+      })
+      .from(competencyTask)
+      .where(
+        and(
+          eq(competencyTask.userId, userId),
+          gte(competencyTask.createdAt, sql`NOW() - INTERVAL '12 months'`)
+        )
+      )
+      .groupBy(sql`to_char(${competencyTask.createdAt}, 'YYYY-MM')`)
+      .orderBy(sql`to_char(${competencyTask.createdAt}, 'YYYY-MM')`);
+
+    // Get source distribution (manual vs AI analysis)
+    const sourceDistribution = await db
+      .select({
+        source: competencyTask.source,
+        count: count(competencyTask.id),
+      })
+      .from(competencyTask)
+      .where(eq(competencyTask.userId, userId))
+      .groupBy(competencyTask.source);
+
+    // Get top competencies (most frequently demonstrated)
+    const topCompetencies = await db
+      .select({
+        competencyCodeId: competencyCode.id,
+        category: competencyCode.category,
+        title: competencyCode.title,
+        count: count(taskCompetency.competencyCodeId),
+      })
+      .from(taskCompetency)
+      .innerJoin(competencyTask, eq(taskCompetency.taskId, competencyTask.id))
+      .innerJoin(competencyCode, eq(taskCompetency.competencyCodeId, competencyCode.id))
+      .where(eq(competencyTask.userId, userId))
+      .groupBy(competencyCode.id, competencyCode.category, competencyCode.title)
+      .orderBy(desc(count(taskCompetency.competencyCodeId)))
+      .limit(10);
+    
+    return {
+      totalTasks: taskStats?.taskCount ?? 0,
+      totalEvidence: evidenceStats?.evidenceCount ?? 0,
+      categoryDistribution,
+      competencyCodeDistribution,
+      monthlyTrends,
+      sourceDistribution,
+      topCompetencies,
+    };
+  } catch (error) {
+    throw new ChatSDKError(
+      'bad_request:database',
+      'Failed to get detailed competency analytics',
     );
   }
 }

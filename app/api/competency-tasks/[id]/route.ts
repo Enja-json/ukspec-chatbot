@@ -12,7 +12,7 @@ const updateTaskSchema = z.object({
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const session = await auth();
@@ -24,7 +24,8 @@ export async function GET(
       );
     }
 
-    const task = await getCompetencyTaskById(params.id);
+    const { id } = await params;
+    const task = await getCompetencyTaskById(id);
 
     // Verify task belongs to user
     if (task.userId !== session.user.id) {
@@ -47,7 +48,7 @@ export async function GET(
 
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const session = await auth();
@@ -59,8 +60,9 @@ export async function PUT(
       );
     }
 
+    const { id } = await params;
     // Verify task exists and belongs to user
-    const existingTask = await getCompetencyTaskById(params.id);
+    const existingTask = await getCompetencyTaskById(id);
     if (existingTask.userId !== session.user.id) {
       return NextResponse.json(
         { error: 'Task not found or access denied' },
@@ -108,7 +110,7 @@ export async function PUT(
 
     // Update the task
     const result = await updateCompetencyTask({
-      taskId: params.id,
+      taskId: id,
       title: validationResult.data.title,
       description: validationResult.data.description,
       competencyCodeIds: validationResult.data.competencyCodeIds,
@@ -130,7 +132,7 @@ export async function PUT(
 
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const session = await auth();
@@ -142,8 +144,9 @@ export async function DELETE(
       );
     }
 
+    const { id } = await params;
     // Delete the task (this also verifies ownership)
-    await deleteCompetencyTask(params.id, session.user.id!);
+    await deleteCompetencyTask(id, session.user.id!);
 
     return NextResponse.json({
       success: true,

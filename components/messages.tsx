@@ -1,12 +1,15 @@
 import type { UIMessage } from 'ai';
 import { PreviewMessage, ThinkingMessage } from './message';
 import { Greeting } from './greeting';
-import { memo } from 'react';
+import { memo, useCallback } from 'react';
 import type { Vote } from '@/lib/db/schema';
 import equal from 'fast-deep-equal';
 import type { UseChatHelpers } from '@ai-sdk/react';
 import { motion } from 'framer-motion';
 import { useMessages } from '@/hooks/use-messages';
+import { extractCompetencyAnalysis } from '@/lib/competency-detection';
+import { useCompetencyLog } from '@/hooks/use-competency-log';
+import { CompetencyLogModal } from './competency-log-modal';
 
 interface MessagesProps {
   chatId: string;
@@ -41,44 +44,119 @@ function PureMessages({
     status,
   });
 
+  const {
+    isModalOpen,
+    competencyCodes,
+    isLoading: isCompetencyLoading,
+    isSubmitting,
+    modalData,
+    closeModal,
+    submitTask,
+    openModalWithAnalysis,
+  } = useCompetencyLog();
+
+  // Handler for adding competency analysis to log
+  const handleAddToCompetencyLog = useCallback((message: UIMessage) => {
+    // Extract competency analysis from the message
+    const textContent = message.parts
+      ?.filter(part => part.type === 'text')
+      .map(part => part.text)
+      .join('\n');
+    
+    if (!textContent) return;
+    
+    const analysis = extractCompetencyAnalysis(textContent);
+    if (!analysis) return;
+    
+    // Find the user message that preceded this AI response
+    const messageIndex = messages.findIndex(m => m.id === message.id);
+    const userMessage = messageIndex > 0 ? messages[messageIndex - 1] : null;
+    const userContent = userMessage?.content || '';
+    
+    // Generate a suggested title from the user's message
+    const suggestedTitle = userContent.length > 50 
+      ? userContent.substring(0, 47) + '...'
+      : userContent || 'Engineering Task';
+    
+    // Store AI metadata for the submit handler
+    const aiMetadata = {
+      chatId,
+      messageId: message.id,
+      aiModel: selectedChatModel,
+      aiResponseData: {
+        originalText: textContent,
+        analysis,
+        userPrompt: userContent,
+      },
+    };
+    
+    // Open the modal with pre-populated data and enhanced submit handler
+    openModalWithAnalysis({
+      taskTitle: suggestedTitle,
+      taskDescription: userContent,
+      demonstratedCompetencies: analysis.demonstrated_competencies,
+      aiMetadata, // Pass AI metadata to the modal
+    });
+  }, [chatId, messages, selectedChatModel, openModalWithAnalysis]);
+
+  // Enhanced submit handler that includes AI metadata
+  const handleSubmitTaskWithAI = useCallback(async (formData: any) => {
+    const aiMetadata = modalData?.aiMetadata;
+    return await submitTask(formData, aiMetadata);
+  }, [submitTask, modalData]);
+
   return (
-    <div
-      ref={messagesContainerRef}
-      className="flex flex-col min-w-0 gap-6 flex-1 overflow-y-scroll pt-4 relative"
-    >
-      {messages.length === 0 && <Greeting selectedChatModel={selectedChatModel} />}
+    <>
+      <div
+        ref={messagesContainerRef}
+        className="flex flex-col min-w-0 gap-6 flex-1 overflow-y-scroll pt-4 relative"
+      >
+        {messages.length === 0 && <Greeting selectedChatModel={selectedChatModel} />}
 
-      {messages.map((message, index) => (
-        <PreviewMessage
-          key={message.id}
-          chatId={chatId}
-          message={message}
-          isLoading={status === 'streaming' && messages.length - 1 === index}
-          vote={
-            votes
-              ? votes.find((vote) => vote.messageId === message.id)
-              : undefined
-          }
-          setMessages={setMessages}
-          reload={reload}
-          isReadonly={isReadonly}
-          requiresScrollPadding={
-            hasSentMessage && index === messages.length - 1
-          }
+        {messages.map((message, index) => (
+          <PreviewMessage
+            key={message.id}
+            chatId={chatId}
+            message={message}
+            isLoading={status === 'streaming' && messages.length - 1 === index}
+            vote={
+              votes
+                ? votes.find((vote) => vote.messageId === message.id)
+                : undefined
+            }
+            setMessages={setMessages}
+            reload={reload}
+            isReadonly={isReadonly}
+            requiresScrollPadding={
+              hasSentMessage && index === messages.length - 1
+            }
+            selectedChatModel={selectedChatModel}
+            onAddToCompetencyLog={() => handleAddToCompetencyLog(message)}
+          />
+        ))}
+
+        {status === 'submitted' &&
+          messages.length > 0 &&
+          messages[messages.length - 1].role === 'user' && <ThinkingMessage />}
+
+        <motion.div
+          ref={messagesEndRef}
+          className="shrink-0 min-w-[24px] min-h-[24px]"
+          onViewportLeave={onViewportLeave}
+          onViewportEnter={onViewportEnter}
         />
-      ))}
+      </div>
 
-      {status === 'submitted' &&
-        messages.length > 0 &&
-        messages[messages.length - 1].role === 'user' && <ThinkingMessage />}
-
-      <motion.div
-        ref={messagesEndRef}
-        className="shrink-0 min-w-[24px] min-h-[24px]"
-        onViewportLeave={onViewportLeave}
-        onViewportEnter={onViewportEnter}
+      {/* Competency Log Modal */}
+      <CompetencyLogModal
+        isOpen={isModalOpen}
+        onClose={closeModal}
+        onSubmit={handleSubmitTaskWithAI}
+        competencyCodes={competencyCodes}
+        isLoading={isSubmitting}
+        aiAnalysisData={modalData}
       />
-    </div>
+    </>
   );
 }
 

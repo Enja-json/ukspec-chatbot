@@ -19,6 +19,7 @@ import { MessageEditor } from './message-editor';
 import { DocumentPreview } from './document-preview';
 import { MessageReasoning } from './message-reasoning';
 import type { UseChatHelpers } from '@ai-sdk/react';
+import { removeJsonFromResponse } from '@/lib/competency-detection';
 
 const PurePreviewMessage = ({
   chatId,
@@ -29,6 +30,8 @@ const PurePreviewMessage = ({
   reload,
   isReadonly,
   requiresScrollPadding,
+  selectedChatModel,
+  onAddToCompetencyLog,
 }: {
   chatId: string;
   message: UIMessage;
@@ -38,6 +41,8 @@ const PurePreviewMessage = ({
   reload: UseChatHelpers['reload'];
   isReadonly: boolean;
   requiresScrollPadding: boolean;
+  selectedChatModel?: string;
+  onAddToCompetencyLog?: () => void;
 }) => {
   const [mode, setMode] = useState<'view' | 'edit'>('view');
 
@@ -103,6 +108,12 @@ const PurePreviewMessage = ({
 
               if (type === 'text') {
                 if (mode === 'view') {
+                  // Filter JSON for UK-SPEC model responses (assistant messages only)
+                  let displayText = part.text;
+                  if (selectedChatModel === 'uk-spec-competency-model' && message.role === 'assistant') {
+                    displayText = removeJsonFromResponse(part.text);
+                  }
+
                   return (
                     <div key={key} className="flex flex-row gap-2 items-start">
                       {message.role === 'user' && !isReadonly && (
@@ -130,7 +141,7 @@ const PurePreviewMessage = ({
                             message.role === 'user',
                         })}
                       >
-                        <Markdown>{sanitizeText(part.text)}</Markdown>
+                        <Markdown>{sanitizeText(displayText)}</Markdown>
                       </div>
                     </div>
                   );
@@ -228,6 +239,8 @@ const PurePreviewMessage = ({
                 message={message}
                 vote={vote}
                 isLoading={isLoading}
+                selectedChatModel={selectedChatModel}
+                onAddToCompetencyLog={onAddToCompetencyLog}
               />
             )}
           </div>
@@ -246,6 +259,7 @@ export const PreviewMessage = memo(
       return false;
     if (!equal(prevProps.message.parts, nextProps.message.parts)) return false;
     if (!equal(prevProps.vote, nextProps.vote)) return false;
+    if (prevProps.selectedChatModel !== nextProps.selectedChatModel) return false;
 
     return true;
   },

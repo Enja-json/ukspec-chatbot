@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { toast } from 'sonner';
 
 interface CompetencyCode {
@@ -22,6 +22,21 @@ export function useCompetencyLog() {
   const [competencyCodes, setCompetencyCodes] = useState<CompetencyCode[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [modalData, setModalData] = useState<{
+    taskTitle: string;
+    taskDescription: string;
+    demonstratedCompetencies: Array<{
+      code: string;
+      confidence_percentage: number;
+      explanation: string;
+    }>;
+    aiMetadata?: {
+      chatId: string;
+      messageId: string;
+      aiModel: string;
+      aiResponseData?: any;
+    };
+  } | null>(null);
 
   // Fetch competency codes from database
   useEffect(() => {
@@ -48,9 +63,36 @@ export function useCompetencyLog() {
   };
 
   const openModal = () => setIsModalOpen(true);
-  const closeModal = () => setIsModalOpen(false);
+  const closeModal = () => {
+    setIsModalOpen(false);
+    setModalData(null);
+  };
 
-  const submitTask = async (formData: TaskFormData) => {
+  const openModalWithAnalysis = useCallback((analysisData: {
+    taskTitle: string;
+    taskDescription: string;
+    demonstratedCompetencies: Array<{
+      code: string;
+      confidence_percentage: number;
+      explanation: string;
+    }>;
+    aiMetadata?: {
+      chatId: string;
+      messageId: string;
+      aiModel: string;
+      aiResponseData?: any;
+    };
+  }) => {
+    setModalData(analysisData);
+    setIsModalOpen(true);
+  }, []);
+
+  const submitTask = async (formData: TaskFormData, aiMetadata?: {
+    chatId: string;
+    messageId: string;
+    aiModel: string;
+    aiResponseData?: any;
+  }) => {
     setIsSubmitting(true);
     try {
       // Create FormData for file upload
@@ -58,6 +100,26 @@ export function useCompetencyLog() {
       submitData.append('title', formData.title);
       submitData.append('description', formData.description);
       submitData.append('competencyCodeIds', JSON.stringify(formData.competencyCodeIds));
+      
+      // Add AI metadata if provided
+      if (aiMetadata) {
+        submitData.append('chatId', aiMetadata.chatId);
+        submitData.append('messageId', aiMetadata.messageId);
+        submitData.append('aiModel', aiMetadata.aiModel);
+        if (aiMetadata.aiResponseData) {
+          submitData.append('aiResponseData', JSON.stringify(aiMetadata.aiResponseData));
+        }
+        
+        // Map modal data to AI competency data if available
+        if (modalData) {
+          const aiCompetencyData = modalData.demonstratedCompetencies.map(comp => ({
+            competencyCodeId: comp.code,
+            confidenceScore: comp.confidence_percentage,
+            aiExplanation: comp.explanation,
+          }));
+          submitData.append('aiCompetencyData', JSON.stringify(aiCompetencyData));
+        }
+      }
       
       // Append files
       formData.evidenceFiles.forEach((file, index) => {
@@ -94,8 +156,10 @@ export function useCompetencyLog() {
     competencyCodes,
     isLoading,
     isSubmitting,
+    modalData,
     openModal,
     closeModal,
     submitTask,
+    openModalWithAnalysis,
   };
 } 

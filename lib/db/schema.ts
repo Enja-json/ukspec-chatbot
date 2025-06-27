@@ -199,6 +199,9 @@ export const competencyTask = pgTable('CompetencyTask', {
   description: text('description').notNull(),
   source: varchar('source', { enum: ['manual', 'ai_analysis'] }).notNull().default('manual'),
   chatId: uuid('chatId').references(() => chat.id), // Optional link to chat where analysis was performed
+  messageId: uuid('messageId').references(() => message.id), // Link to specific message that triggered analysis
+  aiModel: varchar('aiModel', { length: 64 }), // e.g., 'uk-spec-competency-model'
+  aiResponseData: json('aiResponseData'), // Store original AI response for reference
   createdAt: timestamp('createdAt').notNull().defaultNow(),
   updatedAt: timestamp('updatedAt').notNull().defaultNow(),
 });
@@ -216,6 +219,10 @@ export const taskCompetency = pgTable(
       .references(() => competencyCode.id),
     confidenceScore: decimal('confidenceScore', { precision: 5, scale: 2 }), // 0.00 to 100.00
     notes: text('notes'), // Additional notes about how this competency was demonstrated
+    aiExplanation: text('aiExplanation'), // AI's explanation for why this competency was identified
+    sourceType: varchar('sourceType', { 
+      enum: ['ai_suggested', 'manual_added', 'ai_modified'] 
+    }).notNull().default('manual_added'), // Track how this competency was added
     createdAt: timestamp('createdAt').notNull().defaultNow(),
   },
   (table) => ({

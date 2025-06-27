@@ -14,6 +14,7 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 import { format } from 'date-fns';
+import { BotIcon, SparklesIcon } from '@/components/icons';
 
 interface CompetencyTask {
   id: string;
@@ -21,6 +22,10 @@ interface CompetencyTask {
   description: string;
   source: 'manual' | 'ai_analysis';
   createdAt: Date;
+  // AI-specific metadata
+  chatId?: string;
+  messageId?: string;
+  aiModel?: string;
   competencies: Array<{
     competencyCodeId: string;
     code: {
@@ -29,6 +34,10 @@ interface CompetencyTask {
       title: string;
       description: string;
     };
+    // AI competency metadata
+    confidenceScore?: number;
+    aiExplanation?: string;
+    sourceType?: 'ai_suggested' | 'manual_added' | 'ai_modified';
   }>;
   evidence: Array<{
     id: string;
@@ -75,13 +84,15 @@ export function TaskList({ tasks, onEdit, onDelete }: TaskListProps) {
     <>
       <div className="space-y-4">
         {tasks.map((task) => (
-          <Card key={task.id} className="border border-border">
+          <Card key={task.id} className={`border ${task.source === 'ai_analysis' ? 'border-[#288E99]' : 'border-border'}`}>
             <CardHeader className="pb-3">
               <div className="flex items-start justify-between">
                 <div className="flex-1">
-                  <h3 className="font-semibold text-foreground text-lg mb-2">
-                    {task.title}
-                  </h3>
+                  <div className="flex items-center gap-2 mb-2">
+                    <h3 className="font-semibold text-foreground text-lg">
+                      {task.title}
+                    </h3>
+                  </div>
                   <p className="text-muted-foreground text-sm leading-relaxed">
                     {task.description}
                   </p>
@@ -118,15 +129,27 @@ export function TaskList({ tasks, onEdit, onDelete }: TaskListProps) {
                   </h4>
                   <div className="flex flex-wrap gap-1">
                     {task.competencies.map((comp) => (
-                      <span
-                        key={comp.competencyCodeId}
-                        className={`
-                          inline-block px-2 py-1 text-xs font-medium rounded border
-                          ${categoryColours[comp.code?.category || 'A']}
-                        `}
-                      >
-                        {comp.code?.id || comp.competencyCodeId}
-                      </span>
+                      <div key={comp.competencyCodeId} className="relative">
+                        <span
+                          className={`
+                            inline-block px-2 py-1 text-xs font-medium rounded border
+                            ${categoryColours[comp.code?.category || 'A']}
+                            ${comp.sourceType === 'ai_suggested' ? 'ring-1 ring-[#288E99]/50 dark:ring-[#288E99]/70' : ''}
+                          `}
+                        >
+                          {comp.code?.id || comp.competencyCodeId}
+                          {comp.confidenceScore && (
+                            <span className="ml-1 opacity-75">
+                              {Math.round(comp.confidenceScore)}%
+                            </span>
+                          )}
+                        </span>
+                        {comp.sourceType === 'ai_suggested' && (
+                          <div className="absolute -top-1 -right-1 text-[#288E99]">
+                            <SparklesIcon size={10} />
+                          </div>
+                        )}
+                      </div>
                     ))}
                   </div>
                 </div>
@@ -160,10 +183,22 @@ export function TaskList({ tasks, onEdit, onDelete }: TaskListProps) {
                   <span>
                     Added: {format(new Date(task.createdAt), 'dd MMM yyyy')}
                   </span>
-                  <span className="capitalize">
-                    Source: {task.source === 'ai_analysis' ? 'AI Analysis' : 'Manual Entry'}
-                  </span>
+                  {task.source === 'ai_analysis' ? (
+                    <div className="flex items-center gap-1 text-[#288E99] dark:text-[#288E99] font-medium">
+                      <span>Generated from UK-SPEC Chat Analysis</span>
+                    </div>
+                  ) : (
+                    <span className="text-green-600 dark:text-green-400 font-medium">
+                      Manual Entry
+                    </span>
+                  )}
                 </div>
+                {task.source === 'ai_analysis' && (
+                  <div className="flex items-center gap-1 text-xs text-[#288E99] dark:text-[#288E99]">
+                    <SparklesIcon size={12} />
+                    <span>AI Powered</span>
+                  </div>
+                )}
               </div>
             </CardContent>
           </Card>
