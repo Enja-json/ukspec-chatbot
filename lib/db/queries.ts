@@ -89,19 +89,69 @@ export async function createUser(email: string, password: string) {
   }
 }
 
-export async function createGuestUser() {
-  const email = `guest-${Date.now()}`;
-  const password = generateHashedPassword(generateUUID());
 
+
+export async function createOrUpdateLinkedInUser({
+  linkedinId,
+  email,
+  name,
+  image,
+}: {
+  linkedinId: string;
+  email: string;
+  name?: string;
+  image?: string;
+}) {
   try {
-    return await db.insert(user).values({ email, password }).returning({
-      id: user.id,
-      email: user.email,
-    });
+    // Check if user already exists by LinkedIn ID
+    const [existingUser] = await db
+      .select()
+      .from(user)
+      .where(eq(user.linkedinId, linkedinId))
+      .limit(1);
+
+    if (existingUser) {
+      // Update existing user
+      const [updatedUser] = await db
+        .update(user)
+        .set({
+          email,
+          name,
+          image,
+        })
+        .where(eq(user.linkedinId, linkedinId))
+        .returning({
+          id: user.id,
+          email: user.email,
+          name: user.name,
+          image: user.image,
+          onboardingCompleted: user.onboardingCompleted,
+        });
+      return updatedUser;
+    } else {
+      // Create new user
+      const [newUser] = await db
+        .insert(user)
+        .values({
+          linkedinId,
+          email,
+          name,
+          image,
+          onboardingCompleted: false,
+        })
+        .returning({
+          id: user.id,
+          email: user.email,
+          name: user.name,
+          image: user.image,
+          onboardingCompleted: user.onboardingCompleted,
+        });
+      return newUser;
+    }
   } catch (error) {
     throw new ChatSDKError(
       'bad_request:database',
-      'Failed to create guest user',
+      'Failed to create or update LinkedIn user',
     );
   }
 }
@@ -1301,6 +1351,49 @@ export async function getDetailedCompetencyAnalytics(userId: string) {
     throw new ChatSDKError(
       'bad_request:database',
       'Failed to get detailed competency analytics',
+    );
+  }
+}
+
+export async function completeUserOnboarding({
+  userId,
+  onboardingData,
+}: {
+  userId: string;
+  onboardingData: {
+    registrationTitle: 'still-learning' | 'engtech' | 'ieng' | 'ceng';
+    careerGoals: string;
+    currentPosition: string;
+  };
+}) {
+  try {
+    const [updatedUser] = await db
+      .update(user)
+      .set({
+        onboardingCompleted: true,
+        onboardingData,
+      })
+      .where(eq(user.id, userId))
+      .returning({
+        id: user.id,
+        email: user.email,
+        name: user.name,
+        onboardingCompleted: user.onboardingCompleted,
+        onboardingData: user.onboardingData,
+      });
+
+    if (!updatedUser) {
+      throw new ChatSDKError(
+        'not_found:database',
+        'User not found',
+      );
+    }
+
+    return updatedUser;
+  } catch (error) {
+    throw new ChatSDKError(
+      'bad_request:database',
+      'Failed to complete user onboarding',
     );
   }
 }

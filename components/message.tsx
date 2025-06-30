@@ -5,6 +5,7 @@ import cx from 'classnames';
 import { AnimatePresence, motion } from 'framer-motion';
 import { memo, useState } from 'react';
 import type { Vote } from '@/lib/db/schema';
+import type { Session } from 'next-auth';
 import { DocumentToolCall, DocumentToolResult } from './document';
 import { PencilEditIcon, SparklesIcon } from './icons';
 import { Markdown } from './markdown';
@@ -20,6 +21,7 @@ import { DocumentPreview } from './document-preview';
 import { MessageReasoning } from './message-reasoning';
 import type { UseChatHelpers } from '@ai-sdk/react';
 import { removeJsonFromResponse } from '@/lib/competency-detection';
+import Image from 'next/image';
 
 const PurePreviewMessage = ({
   chatId,
@@ -32,6 +34,7 @@ const PurePreviewMessage = ({
   requiresScrollPadding,
   selectedChatModel,
   onAddToCompetencyLog,
+  session,
 }: {
   chatId: string;
   message: UIMessage;
@@ -43,6 +46,7 @@ const PurePreviewMessage = ({
   requiresScrollPadding: boolean;
   selectedChatModel?: string;
   onAddToCompetencyLog?: () => void;
+  session?: Session;
 }) => {
   const [mode, setMode] = useState<'view' | 'edit'>('view');
 
@@ -69,6 +73,18 @@ const PurePreviewMessage = ({
               <div className="translate-y-px">
                 <SparklesIcon size={14} />
               </div>
+            </div>
+          )}
+          
+          {message.role === 'user' && session?.user && (
+            <div className="size-8 flex items-center rounded-full justify-center shrink-0 group-data-[role=user]/message:order-2">
+              <Image
+                src={session.user.image || `https://avatar.vercel.sh/${session.user.email}`}
+                alt={session.user.name ?? session.user.email ?? 'User'}
+                width={32}
+                height={32}
+                className="rounded-full"
+              />
             </div>
           )}
 

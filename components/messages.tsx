@@ -10,6 +10,7 @@ import { useMessages } from '@/hooks/use-messages';
 import { extractCompetencyAnalysis } from '@/lib/competency-detection';
 import { useCompetencyLog } from '@/hooks/use-competency-log';
 import { CompetencyLogModal } from './competency-log-modal';
+import type { Session } from 'next-auth';
 
 interface MessagesProps {
   chatId: string;
@@ -21,6 +22,7 @@ interface MessagesProps {
   isReadonly: boolean;
   isArtifactVisible: boolean;
   selectedChatModel: string;
+  session?: Session;
 }
 
 function PureMessages({
@@ -32,6 +34,7 @@ function PureMessages({
   reload,
   isReadonly,
   selectedChatModel,
+  session,
 }: MessagesProps) {
   const {
     containerRef: messagesContainerRef,
@@ -132,6 +135,7 @@ function PureMessages({
             }
             selectedChatModel={selectedChatModel}
             onAddToCompetencyLog={() => handleAddToCompetencyLog(message)}
+            session={session}
           />
         ))}
 

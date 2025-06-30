@@ -9,6 +9,12 @@ const nextConfig: NextConfig = {
       {
         hostname: 'avatar.vercel.sh',
       },
+      {
+        hostname: 'media.licdn.com',
+      },
+      {
+        hostname: 'platform-lookaside.fbsbx.com',
+      },
     ],
   },
 };

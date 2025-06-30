@@ -23,6 +23,11 @@ export const user = pgTable('User', {
   }).notNull().default('none'),
   subscriptionId: varchar('subscriptionId', { length: 128 }),
   trialEndsAt: timestamp('trialEndsAt'),
+  linkedinId: varchar('linkedinId', { length: 128 }),
+  name: varchar('name', { length: 128 }),
+  image: text('image'),
+  onboardingCompleted: boolean('onboardingCompleted').notNull().default(false),
+  onboardingData: json('onboardingData'),
 });
 
 export type User = InferSelectModel<typeof user>;

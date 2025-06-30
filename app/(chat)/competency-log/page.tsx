@@ -11,7 +11,7 @@ export default async function CompetencyLogPage() {
   const session = await auth();
 
   if (!session) {
-    redirect('/api/auth/guest');
+    redirect('/login');
   }
 
   return <CompetencyLogContent session={session} />;

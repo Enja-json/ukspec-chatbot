@@ -14,17 +14,6 @@ interface Entitlements {
 
 export const entitlementsByUserType: Record<UserType, Entitlements> = {
   /*
-   * For users without an account
-   */
-  guest: {
-    maxMessagesPerMonth: {
-      'mini-mentor-model': 5,
-      'uk-spec-competency-model': 5,
-    },
-    availableChatModelIds: ['mini-mentor-model', 'uk-spec-competency-model'],
-  },
-
-  /*
    * For users with an account (Basic tier - free)
    */
   regular: {

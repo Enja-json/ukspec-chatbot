@@ -20,7 +20,7 @@ import { useSearchParams } from 'next/navigation';
 import { useChatVisibility } from '@/hooks/use-chat-visibility';
 import { useAutoResume } from '@/hooks/use-auto-resume';
 import { ChatSDKError } from '@/lib/errors';
-import { GuestNotification } from './guest-notification';
+
 import { PaywallModal } from './paywall-modal';
 import { usePaywall } from '@/hooks/use-paywall';
 
@@ -146,6 +146,7 @@ export function Chat({
           isReadonly={isReadonly}
           isArtifactVisible={isArtifactVisible}
           selectedChatModel={initialChatModel}
+          session={session}
         />
 
         <form className="flex mx-auto px-4 bg-background pb-4 md:pb-6 gap-2 w-full md:max-w-3xl">
@@ -169,7 +170,7 @@ export function Chat({
         </form>
       </div>
 
-      <GuestNotification session={session} />
+
 
       <Artifact
         chatId={id}

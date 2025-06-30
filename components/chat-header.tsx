@@ -32,7 +32,7 @@ function PureChatHeader({
   const { open } = useSidebar();
 
   const { width: windowWidth } = useWindowSize();
-  const isGuestUser = session?.user?.type === 'guest';
+
 
   return (
     <header className="flex sticky top-0 bg-background py-1.5 items-center px-2 md:px-2 gap-2">
@@ -87,16 +87,7 @@ function PureChatHeader({
         />
       )}
 
-      {isGuestUser && (
-        <Link href="/register" className="order-5 ml-auto">
-          <Button 
-            className="px-4 py-2 text-sm font-medium text-white hover:opacity-90 transition-opacity"
-            style={{ backgroundColor: '#2B9CA8' }}
-          >
-            Sign Up
-          </Button>
-        </Link>
-      )}
+
 
     </header>
   );
