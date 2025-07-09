@@ -7,6 +7,7 @@ import { toast } from '@/components/toast';
 import { signIn } from 'next-auth/react';
 import { Button } from '@/components/ui/button';
 import Image from 'next/image';
+import { TypewriterDemo } from '@/components/typewriter-demo';
 
 export default function Page() {
   const router = useRouter();
@@ -63,8 +64,8 @@ export default function Page() {
             </h1>
             
             <p className="text-xl text-gray-300 max-w-2xl mx-auto leading-relaxed">
-              Mini Mentor supercharges your engineering development with AI guidance that
-              works 24/7 on your competency journey - using advanced AI models
+              <strong>Mini Mentor supercharges your engineering development</strong> with AI guidance that
+              works 24/7 on your <strong>UK-SPEC competency journey</strong> - using advanced AI models
             </p>
           </div>
 
@@ -99,25 +100,9 @@ export default function Page() {
             </p>
           </div>
 
-          {/* Video Section */}
+          {/* AI Demo Section */}
           <div className="mt-12">
-            <div className="relative mx-auto max-w-2xl">
-              <div className="relative overflow-hidden rounded-2xl bg-gray-900 shadow-2xl">
-                <div className="aspect-video">
-                  {/* Placeholder for YouTube video */}
-                  <iframe
-                    width="100%"
-                    height="100%"
-                    src="https://www.youtube.com/embed/dQw4w9WgXcQ"
-                    title="Welcome to Mini Mentor"
-                    frameBorder="0"
-                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                    allowFullScreen
-                    className="rounded-2xl"
-                  ></iframe>
-                </div>
-              </div>
-            </div>
+            <TypewriterDemo />
           </div>
         </div>
       </main>
