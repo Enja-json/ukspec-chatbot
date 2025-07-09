@@ -6,7 +6,7 @@ import {
   streamText,
 } from 'ai';
 import { auth, type UserType } from '@/app/(auth)/auth';
-import { type RequestHints, systemPrompt } from '@/lib/ai/prompts';
+import { type RequestHints, type UserContextData, systemPrompt } from '@/lib/ai/prompts';
 import {
   createStreamId,
   deleteChatById,
@@ -160,9 +160,15 @@ export async function POST(request: Request) {
 
     const stream = createDataStream({
       execute: (dataStream) => {
+        // Prepare user context data if onboarding is completed
+        const userData: UserContextData | undefined = userDetails.onboardingCompleted ? {
+          name: userDetails.name || undefined,
+          onboardingData: userDetails.onboardingData as UserContextData['onboardingData']
+        } : undefined;
+
         const result = streamText({
           model: myProvider.languageModel(selectedChatModel),
-          system: systemPrompt({ selectedChatModel, requestHints }),
+          system: systemPrompt({ selectedChatModel, requestHints, userData }),
           messages,
           maxSteps: 5,
           experimental_activeTools:

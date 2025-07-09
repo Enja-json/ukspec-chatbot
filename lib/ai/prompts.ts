@@ -352,6 +352,51 @@ export interface RequestHints {
   country: Geo['country'];
 }
 
+export interface UserContextData {
+  name?: string;
+  onboardingData?: {
+    registrationTitle: 'still-learning' | 'engtech' | 'ieng' | 'ceng';
+    careerGoals: string;
+    currentPosition: string;
+  };
+}
+
+function getRegistrationDescription(registrationTitle: string): string {
+  switch (registrationTitle) {
+    case 'still-learning':
+      return 'Still Learning - Exploring engineering and learning the basics';
+    case 'engtech':
+      return 'Engineering Technician (EngTech) - Practical application of engineering';
+    case 'ieng':
+      return 'Incorporated Engineer (IEng) - Established engineering principles';
+    case 'ceng':
+      return 'Chartered Engineer (CEng) - Complex engineering challenges';
+    default:
+      return 'Professional Registration Goal';
+  }
+}
+
+export function buildUserContext(userData: UserContextData): string {
+  if (!userData.onboardingData) return '';
+  
+  const { name, onboardingData } = userData;
+  const { registrationTitle, careerGoals, currentPosition } = onboardingData;
+  
+  const firstName = name?.split(' ')[0] || 'the User';
+  
+  return `\n\n## About ${firstName}
+
+**Professional Goal:** ${getRegistrationDescription(registrationTitle)}
+
+**Career Aspirations:**
+${careerGoals}
+
+**Current Position:**
+${currentPosition}
+
+Use this context to personalise your guidance and recommendations. Reference their goals and current situation when providing advice, but don't constantly repeat this information back to them.`;
+}
+
 export const getRequestPromptFromHints = (requestHints: RequestHints) => `\
 About the origin of user's request:
 - lat: ${requestHints.latitude}
@@ -363,16 +408,19 @@ About the origin of user's request:
 export const systemPrompt = ({
   selectedChatModel,
   requestHints,
+  userData,
 }: {
   selectedChatModel: string;
   requestHints: RequestHints;
+  userData?: UserContextData;
 }) => {
   const requestPrompt = getRequestPromptFromHints(requestHints);
+  const userContext = userData ? buildUserContext(userData) : '';
 
   if (selectedChatModel === 'uk-spec-competency-model') {
-    return `${ukSpecPrompt}\n\n${requestPrompt}`;
+    return `${ukSpecPrompt}${userContext}\n\n${requestPrompt}`;
   } else if (selectedChatModel === 'mini-mentor-model') {
-    return `${miniMentorPrompt}\n\n${requestPrompt}`;
+    return `${miniMentorPrompt}${userContext}\n\n${requestPrompt}`;
   } else {
     return `${regularPrompt}\n\n${requestPrompt}\n\n${artifactsPrompt}`;
   }
