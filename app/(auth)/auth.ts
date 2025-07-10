@@ -15,6 +15,7 @@ declare module 'next-auth' {
       id: string;
       type: UserType;
       onboardingCompleted?: boolean;
+      tutorialCompleted?: boolean;
     } & DefaultSession['user'];
   }
 
@@ -23,6 +24,7 @@ declare module 'next-auth' {
     email?: string | null;
     type: UserType;
     onboardingCompleted?: boolean;
+    tutorialCompleted?: boolean;
   }
 }
 
@@ -31,6 +33,7 @@ declare module 'next-auth/jwt' {
     id: string;
     type: UserType;
     onboardingCompleted?: boolean;
+    tutorialCompleted?: boolean;
   }
 }
 
@@ -72,7 +75,7 @@ export const {
 
         if (!passwordsMatch) return null;
 
-        return { ...user, type: 'regular', onboardingCompleted: user.onboardingCompleted };
+        return { ...user, type: 'regular', onboardingCompleted: user.onboardingCompleted, tutorialCompleted: user.tutorialCompleted };
       },
     }),
 
@@ -92,6 +95,7 @@ export const {
           user.id = linkedinUser.id;
           user.type = 'regular';
           user.onboardingCompleted = linkedinUser.onboardingCompleted;
+          user.tutorialCompleted = linkedinUser.tutorialCompleted;
           user.name = linkedinUser.name;
           user.image = linkedinUser.image;
           
@@ -108,12 +112,16 @@ export const {
         token.id = user.id as string;
         token.type = user.type;
         token.onboardingCompleted = user.onboardingCompleted;
+        token.tutorialCompleted = user.tutorialCompleted;
       }
 
       // Handle session updates (when update() is called)
       if (trigger === 'update' && session) {
         if (session.onboardingCompleted !== undefined) {
           token.onboardingCompleted = session.onboardingCompleted;
+        }
+        if (session.tutorialCompleted !== undefined) {
+          token.tutorialCompleted = session.tutorialCompleted;
         }
       }
 
@@ -124,6 +132,7 @@ export const {
         session.user.id = token.id;
         session.user.type = token.type;
         session.user.onboardingCompleted = token.onboardingCompleted;
+        session.user.tutorialCompleted = token.tutorialCompleted;
       }
 
       return session;

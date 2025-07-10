@@ -418,7 +418,7 @@ export const systemPrompt = ({
   const userContext = userData ? buildUserContext(userData) : '';
 
   if (selectedChatModel === 'uk-spec-competency-model') {
-    return `${ukSpecPrompt}${userContext}\n\n${requestPrompt}`;
+    return `${ukSpecPrompt}\n\n${requestPrompt}`;
   } else if (selectedChatModel === 'mini-mentor-model') {
     return `${miniMentorPrompt}${userContext}\n\n${requestPrompt}`;
   } else {

@@ -80,6 +80,7 @@ export function PureMessageActions({
           <Tooltip>
             <TooltipTrigger asChild>
               <Button
+                data-testid="add-to-competency-log"
                 className="py-1 px-2 h-fit text-muted-foreground"
                 variant="outline"
                 onClick={onAddToCompetencyLog}

@@ -28,6 +28,7 @@ export const user = pgTable('User', {
   image: text('image'),
   onboardingCompleted: boolean('onboardingCompleted').notNull().default(false),
   onboardingData: json('onboardingData'),
+  tutorialCompleted: boolean('tutorialCompleted').notNull().default(false),
 });
 
 export type User = InferSelectModel<typeof user>;

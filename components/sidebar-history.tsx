@@ -203,7 +203,7 @@ export function SidebarHistory({ user }: { user: User | undefined }) {
 
   return (
     <>
-      <SidebarGroup>
+      <SidebarGroup data-testid="sidebar-history">
         <SidebarGroupContent>
           <SidebarMenu>
             {paginatedChatHistories &&

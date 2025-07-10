@@ -83,7 +83,11 @@ export async function createUser(email: string, password: string) {
   const hashedPassword = generateHashedPassword(password);
 
   try {
-    return await db.insert(user).values({ email, password: hashedPassword });
+    return await db.insert(user).values({ 
+      email, 
+      password: hashedPassword,
+      tutorialCompleted: false 
+    });
   } catch (error) {
     throw new ChatSDKError('bad_request:database', 'Failed to create user');
   }
@@ -126,6 +130,7 @@ export async function createOrUpdateLinkedInUser({
           name: user.name,
           image: user.image,
           onboardingCompleted: user.onboardingCompleted,
+          tutorialCompleted: user.tutorialCompleted,
         });
       return updatedUser;
     } else {
@@ -138,6 +143,7 @@ export async function createOrUpdateLinkedInUser({
           name,
           image,
           onboardingCompleted: false,
+          tutorialCompleted: false,
         })
         .returning({
           id: user.id,
@@ -145,6 +151,7 @@ export async function createOrUpdateLinkedInUser({
           name: user.name,
           image: user.image,
           onboardingCompleted: user.onboardingCompleted,
+          tutorialCompleted: user.tutorialCompleted,
         });
       return newUser;
     }

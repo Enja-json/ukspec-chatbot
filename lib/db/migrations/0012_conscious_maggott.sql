@@ -1,0 +1,1 @@
+ALTER TABLE "User" ADD COLUMN "tutorialCompleted" boolean DEFAULT false NOT NULL;
