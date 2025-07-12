@@ -45,8 +45,8 @@ export async function POST(req: NextRequest) {
       }
 
       case 'invoice.payment_succeeded': {
-        // Payment succeeded - subscription status will be updated via subscription.updated event
-        console.log('Payment succeeded');
+        const invoice = event.data.object as Stripe.Invoice;
+        await handleInvoicePaymentSucceeded(invoice);
         break;
       }
 
@@ -167,5 +167,28 @@ async function handlePaymentIntentSucceeded(paymentIntent: Stripe.PaymentIntent)
     });
 
     console.log(`Lifetime purchase completed for user ${user.id}`);
+  }
+}
+
+async function handleInvoicePaymentSucceeded(invoice: Stripe.Invoice) {
+  const customerId = invoice.customer as string;
+  const user = await getUserByStripeCustomerId(customerId);
+  
+  if (!user) {
+    console.error('User not found for Stripe customer:', customerId);
+    return;
+  }
+
+  // For successful invoice payments, ensure subscription is active
+  const subscriptionId = (invoice as any).subscription;
+  if (subscriptionId) {
+    await updateUserSubscription({
+      userId: user.id,
+      subscriptionId: subscriptionId,
+      subscriptionStatus: 'active',
+      trialEndsAt: null,
+    });
+
+    console.log(`Invoice payment succeeded for user ${user.id}, subscription activated`);
   }
 } 
