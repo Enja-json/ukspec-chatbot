@@ -109,11 +109,11 @@ export function OnboardingModal({ isOpen, onClose, onComplete, isLoading = false
               </h2>
               <div className="space-y-3 text-muted-foreground">
                 <p className="text-base leading-relaxed">
-                  Let's get you set up for success on your engineering chartership journey.
+                  Let&apos;s get you set up for success on your engineering chartership journey.
                 </p>
                 <p className="text-sm">
                   The more context you provide, the better I can tailor my guidance to your specific needs. 
-                  Don't worry - you can update these details at any time.
+                  Don&apos;t worry - you can update these details at any time.
                 </p>
               </div>
             </div>
@@ -125,7 +125,7 @@ export function OnboardingModal({ isOpen, onClose, onComplete, isLoading = false
           <div className="space-y-6">
             <div className="text-center space-y-2">
               <h2 className="text-xl font-semibold text-foreground">
-                What's your registration goal?
+                What&apos;s your registration goal?
               </h2>
               <p className="text-sm text-muted-foreground">
                 This helps me understand where you are in your journey

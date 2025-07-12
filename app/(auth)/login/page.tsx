@@ -116,7 +116,7 @@ export default function Page() {
           <Link href="/terms" className="hover:text-white transition-colors">
             terms of service
           </Link>
-          <span>we're hiring!</span>
+          <span>we&apos;re hiring!</span>
         </div>
       </footer>
     </div>

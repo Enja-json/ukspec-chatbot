@@ -273,7 +273,7 @@ export function ProfileSettingsModal({ isOpen, onClose }: ProfileSettingsModalPr
                               <p className="text-sm text-muted-foreground mb-4">
                                 {isTrialActive 
                                   ? "Cancelling will end your trial immediately and revert you to the free plan."
-                                  : "Cancelling will end your subscription at the end of your current billing period. You'll still have access to professional features until then."
+                                  : "Cancelling will end your subscription at the end of your current billing period. You&apos;ll still have access to professional features until then."
                                 }
                               </p>
                               <Button
@@ -384,7 +384,7 @@ export function ProfileSettingsModal({ isOpen, onClose }: ProfileSettingsModalPr
               {isTrialActive ? (
                 <div className="mt-3 p-3 bg-destructive/10 rounded-md">
                   <p className="text-sm font-medium text-destructive">
-                    Your trial will end immediately and you'll lose access to:
+                    Your trial will end immediately and you&apos;ll lose access to:
                   </p>
                   <ul className="text-sm text-destructive mt-2 space-y-1">
                     <li>• Unlimited conversations</li>
@@ -396,7 +396,7 @@ export function ProfileSettingsModal({ isOpen, onClose }: ProfileSettingsModalPr
               ) : (
                 <div className="mt-3 p-3 bg-muted rounded-md">
                   <p className="text-sm">
-                    You'll continue to have access to professional features until your current billing period ends.
+                    You&apos;ll continue to have access to professional features until your current billing period ends.
                   </p>
                 </div>
               )}
