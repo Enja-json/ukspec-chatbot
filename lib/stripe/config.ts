@@ -16,8 +16,8 @@ export const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
 export const STRIPE_CONFIG = {
   prices: {
     professional: {
-      monthly: 'price_1Rk0ozPsTCOo0fiqB9GlMHI4',
-      lifetime: 'price_1Rk10QPsTCOo0fiqelQbkwze',
+      monthly: 'price_1Rk6HHLt7v9Y6bvvwt8sShTT',
+      lifetime: 'price_1Rk6HHLt7v9Y6bvvcPZDGidY',
     },
   },
   webhookSecret: process.env.STRIPE_WEBHOOK_SECRET,
