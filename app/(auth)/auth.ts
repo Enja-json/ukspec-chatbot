@@ -9,6 +9,12 @@ import type { DefaultJWT } from 'next-auth/jwt';
 
 export type UserType = 'regular' | 'professional';
 
+export interface OnboardingData {
+  registrationTitle: 'still-learning' | 'engtech' | 'ieng' | 'ceng';
+  careerGoals: string;
+  currentPosition: string;
+}
+
 declare module 'next-auth' {
   interface Session extends DefaultSession {
     user: {
@@ -16,6 +22,7 @@ declare module 'next-auth' {
       type: UserType;
       onboardingCompleted?: boolean;
       tutorialCompleted?: boolean;
+      onboardingData?: OnboardingData;
     } & DefaultSession['user'];
   }
 
@@ -25,6 +32,7 @@ declare module 'next-auth' {
     type: UserType;
     onboardingCompleted?: boolean;
     tutorialCompleted?: boolean;
+    onboardingData?: OnboardingData;
   }
 }
 
@@ -34,6 +42,7 @@ declare module 'next-auth/jwt' {
     type: UserType;
     onboardingCompleted?: boolean;
     tutorialCompleted?: boolean;
+    onboardingData?: OnboardingData;
   }
 }
 
@@ -75,7 +84,13 @@ export const {
 
         if (!passwordsMatch) return null;
 
-        return { ...user, type: 'regular', onboardingCompleted: user.onboardingCompleted, tutorialCompleted: user.tutorialCompleted };
+        return { 
+          ...user, 
+          type: 'regular', 
+          onboardingCompleted: user.onboardingCompleted, 
+          tutorialCompleted: user.tutorialCompleted,
+          onboardingData: user.onboardingData as OnboardingData
+        };
       },
     }),
 
@@ -96,6 +111,7 @@ export const {
           user.type = 'regular';
           user.onboardingCompleted = linkedinUser.onboardingCompleted;
           user.tutorialCompleted = linkedinUser.tutorialCompleted;
+          user.onboardingData = linkedinUser.onboardingData as OnboardingData;
           user.name = linkedinUser.name;
           user.image = linkedinUser.image;
           
@@ -113,6 +129,7 @@ export const {
         token.type = user.type;
         token.onboardingCompleted = user.onboardingCompleted;
         token.tutorialCompleted = user.tutorialCompleted;
+        token.onboardingData = user.onboardingData;
       }
 
       // Handle session updates (when update() is called)
@@ -122,6 +139,9 @@ export const {
         }
         if (session.tutorialCompleted !== undefined) {
           token.tutorialCompleted = session.tutorialCompleted;
+        }
+        if (session.onboardingData !== undefined) {
+          token.onboardingData = session.onboardingData;
         }
       }
 
@@ -133,6 +153,7 @@ export const {
         session.user.type = token.type;
         session.user.onboardingCompleted = token.onboardingCompleted;
         session.user.tutorialCompleted = token.tutorialCompleted;
+        session.user.onboardingData = token.onboardingData;
       }
 
       return session;

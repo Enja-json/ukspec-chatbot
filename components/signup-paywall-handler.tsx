@@ -2,13 +2,12 @@
 
 import { useEffect, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
-import { PaywallModal } from './paywall-modal';
-import { usePaywall } from '@/hooks/use-paywall';
+import { usePaywall } from '@/components/paywall-provider';
 
 function SignupPaywallContent() {
   const searchParams = useSearchParams();
   const signup = searchParams.get('signup');
-  const { isPaywallOpen, showPaywall, hidePaywall, paywallTrigger, startTrial, isLoading } = usePaywall();
+  const { showPaywall } = usePaywall();
 
   useEffect(() => {
     if (signup === 'true') {
@@ -24,20 +23,12 @@ function SignupPaywallContent() {
     }
   }, [signup, showPaywall]);
 
-  return (
-    <PaywallModal
-      isOpen={isPaywallOpen}
-      onClose={hidePaywall}
-      trigger={paywallTrigger || 'signup'}
-      onStartTrial={startTrial}
-      isLoading={isLoading}
-    />
-  );
+  return null; // No need to render anything as the PaywallModal is handled globally
 }
 
 export function SignupPaywallHandler() {
   return (
-    <Suspense fallback={null}>
+    <Suspense>
       <SignupPaywallContent />
     </Suspense>
   );

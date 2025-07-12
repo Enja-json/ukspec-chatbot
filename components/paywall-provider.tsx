@@ -1,9 +1,9 @@
 'use client';
 
-import { useState, useCallback } from 'react';
+import { createContext, useContext, useState, useCallback, ReactNode } from 'react';
 import { toast } from '@/components/toast';
 
-interface UsePaywallReturn {
+interface PaywallContextType {
   isPaywallOpen: boolean;
   showPaywall: (trigger: 'signup' | 'rate-limit') => void;
   hidePaywall: () => void;
@@ -12,7 +12,9 @@ interface UsePaywallReturn {
   isLoading: boolean;
 }
 
-export function usePaywall(): UsePaywallReturn {
+const PaywallContext = createContext<PaywallContextType | undefined>(undefined);
+
+export function PaywallProvider({ children }: { children: ReactNode }) {
   const [isPaywallOpen, setIsPaywallOpen] = useState(false);
   const [paywallTrigger, setPaywallTrigger] = useState<'signup' | 'rate-limit' | null>(null);
   const [isLoading, setIsLoading] = useState(false);
@@ -62,7 +64,7 @@ export function usePaywall(): UsePaywallReturn {
     }
   }, []);
 
-  return {
+  const value = {
     isPaywallOpen,
     showPaywall,
     hidePaywall,
@@ -70,4 +72,18 @@ export function usePaywall(): UsePaywallReturn {
     startTrial,
     isLoading,
   };
+
+  return (
+    <PaywallContext.Provider value={value}>
+      {children}
+    </PaywallContext.Provider>
+  );
+}
+
+export function usePaywall() {
+  const context = useContext(PaywallContext);
+  if (context === undefined) {
+    throw new Error('usePaywall must be used within a PaywallProvider');
+  }
+  return context;
 } 

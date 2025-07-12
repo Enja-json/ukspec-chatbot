@@ -35,10 +35,13 @@ export async function POST(req: NextRequest) {
     // Update user with Stripe customer ID
     await updateUserStripeCustomerId(session.user.id, customer.id);
 
-    // Create checkout session with 14-day trial
+    // Determine if this is a lifetime purchase or monthly subscription
+    const isLifetime = priceId === STRIPE_CONFIG.prices.professional.lifetime;
+
+    // Create checkout session
     const checkoutSession = await stripe.checkout.sessions.create({
       customer: customer.id,
-      mode: 'subscription',
+      mode: isLifetime ? 'payment' : 'subscription',
       payment_method_types: ['card'],
       line_items: [
         {
@@ -46,12 +49,24 @@ export async function POST(req: NextRequest) {
           quantity: 1,
         },
       ],
-      subscription_data: {
-        trial_period_days: 14,
-        metadata: {
-          userId: session.user.id,
+      ...(isLifetime ? {
+        // For lifetime purchases, no subscription data needed
+        payment_intent_data: {
+          metadata: {
+            userId: session.user.id,
+            type: 'lifetime',
+          },
         },
-      },
+      } : {
+        // For monthly subscriptions, include trial and subscription data
+        subscription_data: {
+          trial_period_days: 14,
+          metadata: {
+            userId: session.user.id,
+            type: 'monthly',
+          },
+        },
+      }),
       success_url: `${req.headers.get('origin')}/success?session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${req.headers.get('origin')}/?cancelled=true`,
       allow_promotion_codes: true,

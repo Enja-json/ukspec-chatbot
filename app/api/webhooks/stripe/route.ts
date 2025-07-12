@@ -38,6 +38,12 @@ export async function POST(req: NextRequest) {
         break;
       }
 
+      case 'payment_intent.succeeded': {
+        const paymentIntent = event.data.object as Stripe.PaymentIntent;
+        await handlePaymentIntentSucceeded(paymentIntent);
+        break;
+      }
+
       case 'invoice.payment_succeeded': {
         // Payment succeeded - subscription status will be updated via subscription.updated event
         console.log('Payment succeeded');
@@ -55,9 +61,9 @@ export async function POST(req: NextRequest) {
     }
 
     return NextResponse.json({ received: true });
-  } catch (error) {
-    console.error('Webhook processing error:', error);
-    return NextResponse.json({ error: 'Webhook processing failed' }, { status: 500 });
+  } catch (error: any) {
+    console.error('Webhook error:', error);
+    return NextResponse.json({ error: 'Webhook handler failed' }, { status: 500 });
   }
 }
 
@@ -141,4 +147,25 @@ async function handleSubscriptionDeleted(subscription: Stripe.Subscription) {
   console.log(`Subscription deleted for user ${user.id}`);
 }
 
-// Invoice handlers removed - subscription events handle status changes 
+async function handlePaymentIntentSucceeded(paymentIntent: Stripe.PaymentIntent) {
+  // Handle lifetime purchases
+  if (paymentIntent.metadata?.type === 'lifetime') {
+    const customerId = paymentIntent.customer as string;
+    const user = await getUserByStripeCustomerId(customerId);
+    
+    if (!user) {
+      console.error('User not found for Stripe customer:', customerId);
+      return;
+    }
+
+    // For lifetime purchases, set status to active with no expiration
+    await updateUserSubscription({
+      userId: user.id,
+      subscriptionId: `lifetime_${paymentIntent.id}`, // Use payment intent ID for tracking
+      subscriptionStatus: 'active',
+      trialEndsAt: null, // No trial for lifetime
+    });
+
+    console.log(`Lifetime purchase completed for user ${user.id}`);
+  }
+} 

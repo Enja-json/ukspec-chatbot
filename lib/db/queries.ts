@@ -131,6 +131,7 @@ export async function createOrUpdateLinkedInUser({
           image: user.image,
           onboardingCompleted: user.onboardingCompleted,
           tutorialCompleted: user.tutorialCompleted,
+          onboardingData: user.onboardingData,
         });
       return updatedUser;
     } else {
@@ -152,6 +153,7 @@ export async function createOrUpdateLinkedInUser({
           image: user.image,
           onboardingCompleted: user.onboardingCompleted,
           tutorialCompleted: user.tutorialCompleted,
+          onboardingData: user.onboardingData,
         });
       return newUser;
     }

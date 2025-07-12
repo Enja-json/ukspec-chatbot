@@ -21,8 +21,7 @@ import { useChatVisibility } from '@/hooks/use-chat-visibility';
 import { useAutoResume } from '@/hooks/use-auto-resume';
 import { ChatSDKError } from '@/lib/errors';
 
-import { PaywallModal } from './paywall-modal';
-import { usePaywall } from '@/hooks/use-paywall';
+import { usePaywall } from '@/components/paywall-provider';
 
 export function Chat({
   id,
@@ -42,7 +41,7 @@ export function Chat({
   autoResume: boolean;
 }) {
   const { mutate } = useSWRConfig();
-  const { isPaywallOpen, showPaywall, hidePaywall, paywallTrigger, startTrial, isLoading: paywallLoading } = usePaywall();
+  const { showPaywall } = usePaywall();
 
   const { visibilityType } = useChatVisibility({
     chatId: id,
@@ -170,8 +169,6 @@ export function Chat({
         </form>
       </div>
 
-
-
       <Artifact
         chatId={id}
         input={input}
@@ -189,14 +186,6 @@ export function Chat({
         isReadonly={isReadonly}
         selectedVisibilityType={visibilityType}
         selectedChatModel={initialChatModel}
-      />
-
-      <PaywallModal
-        isOpen={isPaywallOpen}
-        onClose={hidePaywall}
-        trigger={paywallTrigger || 'rate-limit'}
-        onStartTrial={startTrial}
-        isLoading={paywallLoading}
       />
     </>
   );

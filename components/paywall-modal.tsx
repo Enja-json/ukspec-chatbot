@@ -18,20 +18,22 @@ interface PaywallModalProps {
 }
 
 export function PaywallModal({ isOpen, onClose, trigger, onStartTrial, isLoading = false }: PaywallModalProps) {
-  const [selectedPlan, setSelectedPlan] = useState<'monthly' | 'yearly'>('monthly');
+  const [selectedPlan, setSelectedPlan] = useState<'monthly' | 'lifetime'>('monthly');
 
   const plans = {
     monthly: {
-      priceId: 'price_1RajA9PsTCOo0fiqqAZs8mKk',
-      price: '£9.99',
+      priceId: 'price_1Rk0ozPsTCOo0fiqB9GlMHI4',
+      price: '£4.98',
       period: 'month',
       savings: null,
+      description: '14-day free trial',
     },
-    yearly: {
-      priceId: 'price_1RajA9PsTCOo0fiqznY8qN6b',
-      price: '£69.99',
-      period: 'year',
-      savings: 'Save £49.89',
+    lifetime: {
+      priceId: 'price_1Rk10QPsTCOo0fiqelQbkwze',
+      price: '£79.98',
+      period: 'one time',
+      savings: 'Never pay again',
+      description: 'Pay once, use forever',
     },
   };
 
@@ -41,7 +43,7 @@ export function PaywallModal({ isOpen, onClose, trigger, onStartTrial, isLoading
     'Competency tracking dashboard',
     'Monthly progress reports via email',
     'Export your progress (PDF & Excel)',
-    '14-day free trial',
+    ...(selectedPlan === 'monthly' ? ['14-day free trial'] : ['Lifetime access']),
   ];
 
   const getTitle = () => {
@@ -55,7 +57,23 @@ export function PaywallModal({ isOpen, onClose, trigger, onStartTrial, isLoading
     if (trigger === 'rate-limit') {
       return 'Upgrade to Professional to continue your chartership journey with unlimited access.';
     }
-    return 'Start your 14-day free trial and accelerate your UK engineering chartership.';
+    return selectedPlan === 'monthly' 
+      ? 'Start your 14-day free trial and accelerate your UK engineering chartership.'
+      : 'Get lifetime access and accelerate your UK engineering chartership journey.';
+  };
+
+  const getButtonText = () => {
+    if (isLoading) {
+      return selectedPlan === 'monthly' ? 'Starting trial...' : 'Processing...';
+    }
+    return selectedPlan === 'monthly' ? 'Start 14-Day Free Trial' : 'Get Lifetime Access';
+  };
+
+  const getButtonSubtext = () => {
+    if (selectedPlan === 'monthly') {
+      return 'No charge for 14 days. Cancel anytime.';
+    }
+    return 'One-time payment, lifetime access.';
   };
 
   return (
@@ -86,19 +104,19 @@ export function PaywallModal({ isOpen, onClose, trigger, onStartTrial, isLoading
               >
                 Monthly
               </button>
-                              <button
-                  onClick={() => setSelectedPlan('yearly')}
-                  className={`flex-1 py-3 px-4 text-sm font-medium rounded-md transition-all duration-200 relative ${
-                    selectedPlan === 'yearly'
-                      ? 'bg-background text-foreground shadow-sm border border-border'
-                      : 'text-muted-foreground hover:text-foreground'
-                  }`}
-                >
-                  Yearly
-                  <span className="absolute -top-2 -right-2 bg-primary text-primary-foreground text-xs font-medium px-2 py-1 rounded-full">
-                    Save
-                  </span>
-                </button>
+              <button
+                onClick={() => setSelectedPlan('lifetime')}
+                className={`flex-1 py-3 px-4 text-sm font-medium rounded-md transition-all duration-200 relative ${
+                  selectedPlan === 'lifetime'
+                    ? 'bg-background text-foreground shadow-sm border border-border'
+                    : 'text-muted-foreground hover:text-foreground'
+                }`}
+              >
+                Lifetime
+                <span className="absolute -top-2 -right-2 bg-primary text-primary-foreground text-xs font-medium px-2 py-1 rounded-full">
+                  Best
+                </span>
+              </button>
             </div>
           </div>
 
@@ -123,11 +141,11 @@ export function PaywallModal({ isOpen, onClose, trigger, onStartTrial, isLoading
             className="w-full bg-primary hover:bg-primary/90 text-primary-foreground h-12 text-base font-medium"
             disabled={isLoading}
           >
-            {isLoading ? 'Starting trial...' : 'Start 14-Day Free Trial'}
+            {getButtonText()}
           </Button>
           
           <p className="text-xs text-center text-muted-foreground mt-3">
-            No charge for 14 days. Cancel anytime.
+            {getButtonSubtext()}
           </p>
 
           {/* Features List */}

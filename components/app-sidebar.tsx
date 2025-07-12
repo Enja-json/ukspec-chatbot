@@ -17,6 +17,7 @@ import {
 } from '@/components/ui/sidebar';
 import Link from 'next/link';
 import { Tooltip, TooltipContent, TooltipTrigger } from './ui/tooltip';
+import { UpgradeButton } from './upgrade-button';
 
 export function AppSidebar({ user }: { user: User | undefined }) {
   const router = useRouter();
@@ -68,7 +69,7 @@ export function AppSidebar({ user }: { user: User | undefined }) {
           <div className="px-2 py-1 text-xs text-sidebar-foreground/50">
             Tools
           </div>
-          <div className="px-2">
+          <div className="px-2 space-y-1">
             <Link
               href="/competency-log"
               onClick={() => {
@@ -93,6 +94,11 @@ export function AppSidebar({ user }: { user: User | undefined }) {
               </div>
               Analytics
             </Link>
+            
+            {/* Upgrade Button */}
+            <div className="px-2 py-2">
+              <UpgradeButton className="w-full" />
+            </div>
           </div>
         </SidebarMenu>
         <SidebarHistory user={user} />

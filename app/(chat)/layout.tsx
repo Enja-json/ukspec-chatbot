@@ -6,6 +6,8 @@ import { auth } from '../(auth)/auth';
 import Script from 'next/script';
 import { OnboardingHandler } from '@/components/onboarding-handler';
 import { TutorialHandler } from '@/components/tutorial-handler';
+import { PaywallProvider } from '@/components/paywall-provider';
+import { PaywallModalHandler } from '@/components/paywall-modal-handler';
 
 export const experimental_ppr = true;
 
@@ -23,12 +25,15 @@ export default async function Layout({
         src="https://cdn.jsdelivr.net/pyodide/v0.23.4/full/pyodide.js"
         strategy="beforeInteractive"
       />
-      <SidebarProvider defaultOpen={!isCollapsed}>
-        <AppSidebar user={session?.user} />
-        <SidebarInset>{children}</SidebarInset>
-        <OnboardingHandler />
-        <TutorialHandler />
-      </SidebarProvider>
+      <PaywallProvider>
+        <SidebarProvider defaultOpen={!isCollapsed}>
+          <AppSidebar user={session?.user} />
+          <SidebarInset>{children}</SidebarInset>
+          <OnboardingHandler />
+          <TutorialHandler />
+          <PaywallModalHandler />
+        </SidebarProvider>
+      </PaywallProvider>
     </>
   );
 }

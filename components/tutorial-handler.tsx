@@ -7,17 +7,34 @@ import { useSWRConfig } from 'swr';
 import { toast } from 'sonner';
 
 export function TutorialHandler() {
-  const { data: session } = useSession();
+  const { data: session, update } = useSession();
   const { mutate } = useSWRConfig();
   const [isCompleted, setIsCompleted] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
 
-  // Check if tutorial should be shown
+  // Reset completion state when user changes
+  useEffect(() => {
+    setIsCompleted(false);
+  }, [session?.user?.id]);
+
+  // Additional safety check with localStorage backup
+  useEffect(() => {
+    if (session?.user?.id) {
+      const tutorialCompletedKey = `tutorial-completed-${session.user.id}`;
+      const localCompleted = localStorage.getItem(tutorialCompletedKey) === 'true';
+      if (localCompleted) {
+        setIsCompleted(true);
+      }
+    }
+  }, [session?.user?.id]);
+
+  // Check if tutorial should be shown - STRICT CONDITIONS
   const shouldShowTutorial = Boolean(
     session?.user?.id && 
     session.user.onboardingCompleted === true && // Only show after onboarding is done
     session.user.tutorialCompleted === false && // Haven't completed tutorial yet
-    !isCompleted // Not completed in this session
+    !isCompleted && // Not completed in this session
+    !isLoading // Not currently processing completion
   );
 
   const completeTutorial = async () => {
@@ -35,9 +52,14 @@ export function TutorialHandler() {
       }
 
       // Update session to reflect tutorial completion
-      mutate('/api/auth/session');
-      setIsCompleted(true);
+      await update({ tutorialCompleted: true });
       
+      // Set localStorage backup flag to prevent showing again
+      if (session?.user?.id) {
+        localStorage.setItem(`tutorial-completed-${session.user.id}`, 'true');
+      }
+      
+      setIsCompleted(true);
       toast.success('Welcome to Mini Mentor! You\'re all set to get started.');
     } catch (error) {
       console.error('Failed to complete tutorial:', error);
@@ -62,9 +84,14 @@ export function TutorialHandler() {
       }
 
       // Update session to reflect tutorial completion
-      mutate('/api/auth/session');
-      setIsCompleted(true);
+      await update({ tutorialCompleted: true });
       
+      // Set localStorage backup flag to prevent showing again
+      if (session?.user?.id) {
+        localStorage.setItem(`tutorial-completed-${session.user.id}`, 'true');
+      }
+      
+      setIsCompleted(true);
       toast.success('Tutorial skipped. You can explore Mini Mentor at your own pace!');
     } catch (error) {
       console.error('Failed to skip tutorial:', error);
