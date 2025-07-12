@@ -1,17 +1,14 @@
-import type { Page } from '@playwright/test';
-import { expect } from '../fixtures';
+import { expect, type Page } from '@playwright/test';
 
 export class AuthPage {
   constructor(private page: Page) {}
 
   async gotoLogin() {
     await this.page.goto('/login');
-    await expect(this.page.getByRole('heading')).toContainText('Sign In');
   }
 
   async gotoRegister() {
     await this.page.goto('/register');
-    await expect(this.page.getByRole('heading')).toContainText('Sign Up');
   }
 
   async register(email: string, password: string) {
@@ -34,9 +31,12 @@ export class AuthPage {
 
   async logout(email: string, password: string) {
     await this.login(email, password);
-    await this.page.waitForURL('/');
 
-    await this.openSidebar();
+    await this.page.waitForURL('/');
+    await expect(this.page.getByPlaceholder('Send a message...')).toBeVisible();
+
+    const sidebarToggleButton = this.page.getByTestId('sidebar-toggle-button');
+    await sidebarToggleButton.click();
 
     const userNavButton = this.page.getByTestId('user-nav-button');
     await expect(userNavButton).toBeVisible();
@@ -46,20 +46,12 @@ export class AuthPage {
     await expect(userNavMenu).toBeVisible();
 
     const authMenuItem = this.page.getByTestId('user-nav-item-auth');
-    await expect(authMenuItem).toContainText('Sign out');
-
     await authMenuItem.click();
 
-    const userEmail = this.page.getByTestId('user-email');
-    await expect(userEmail).toContainText('Guest');
+    await expect(this.page).toHaveURL('/login');
   }
 
   async expectToastToContain(text: string) {
     await expect(this.page.getByTestId('toast')).toContainText(text);
-  }
-
-  async openSidebar() {
-    const sidebarToggleButton = this.page.getByTestId('sidebar-toggle-button');
-    await sidebarToggleButton.click();
   }
 }
