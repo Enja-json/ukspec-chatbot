@@ -85,13 +85,6 @@
       "when": 1751036620755,
       "tag": "0011_curved_chronomancer",
       "breakpoints": true
-    },
-    {
-      "idx": 12,
-      "version": "7",
-      "when": 1752166299595,
-      "tag": "0012_conscious_maggott",
-      "breakpoints": true
     }
   ]
 }
