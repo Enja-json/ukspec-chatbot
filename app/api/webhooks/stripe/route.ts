@@ -4,10 +4,28 @@ import Stripe from 'stripe';
 import { stripe, STRIPE_CONFIG } from '@/lib/stripe/config';
 import { updateUserSubscription, getUserByStripeCustomerId } from '@/lib/db/queries';
 
+// Simple GET endpoint to test webhook accessibility
+export async function GET() {
+  console.log('🔵 GET request to webhook endpoint');
+  return NextResponse.json({ message: 'Webhook endpoint is accessible', timestamp: new Date().toISOString() });
+}
+
 export async function POST(req: NextRequest) {
+  console.log('🔵 Webhook received:', req.method, req.url);
+  console.log('🔵 Request headers:', Object.fromEntries(await headers()));
+  console.log('🔵 Request URL breakdown:', {
+    href: req.url,
+    pathname: new URL(req.url).pathname,
+    search: new URL(req.url).search,
+    host: new URL(req.url).host
+  });
+  
   const body = await req.text();
   const headersList = await headers();
   const signature = headersList.get('stripe-signature') as string;
+  
+  console.log('🔵 Body length:', body.length);
+  console.log('🔵 Signature present:', !!signature);
 
   let event: Stripe.Event;
 
