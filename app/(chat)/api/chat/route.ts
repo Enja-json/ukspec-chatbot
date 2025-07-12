@@ -83,7 +83,7 @@ export async function POST(request: Request) {
       return new ChatSDKError('unauthorized:chat').toResponse();
     }
 
-    const userType: UserType = session.user.type;
+    const userType: UserType = session.user.type || 'regular';
 
     // Get user details including subscription status
     const userDetails = await getUserById(session.user.id);

@@ -44,5 +44,5 @@ export function getUserEntitlements(userType: UserType, subscriptionStatus?: Sub
   }
   
   // Otherwise use the base user type entitlements
-  return entitlementsByUserType[userType];
+  return entitlementsByUserType[userType] || entitlementsByUserType.regular;
 }
