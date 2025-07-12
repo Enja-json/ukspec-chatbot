@@ -28,7 +28,7 @@ export function TutorialHandler() {
     }
   }, [session?.user?.id]);
 
-  // Check if tutorial should be shown - STRICT CONDITIONS
+  // Check if tutorial should be shown - PROPER CONDITIONS RESTORED
   const shouldShowTutorial = Boolean(
     session?.user?.id && 
     session.user.onboardingCompleted === true && // Only show after onboarding is done
