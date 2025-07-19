@@ -1,23 +1,28 @@
 import { motion } from 'framer-motion';
+import type { Session } from 'next-auth';
 
 interface GreetingProps {
   selectedChatModel: string;
+  session?: Session;
 }
 
-export const Greeting = ({ selectedChatModel }: GreetingProps) => {
+export const Greeting = ({ selectedChatModel, session }: GreetingProps) => {
+  // Extract first name from user's full name
+  const firstName = session?.user?.name?.split(' ')[0] || '';
+  
   // Define greetings for each model
   const greetings = {
     'mini-mentor-model': {
-      title: 'Hello there!',
+      title: firstName ? `Hello ${firstName}!` : 'Hello there!',
       subtitle: 'Ready to advance your engineering career?'
     },
     'uk-spec-competency-model': {
-      title: 'Welcome!',
+      title: firstName ? `Welcome ${firstName}!` : 'Welcome!',
       subtitle: 'Let\'s analyse your work against UK-SPEC competencies.'
     },
     // Fallback for any other models
     default: {
-      title: 'Hello there!',
+      title: firstName ? `Hello ${firstName}!` : 'Hello there!',
       subtitle: 'How can I help you today?'
     }
   };

@@ -26,7 +26,7 @@ const TutorialCard = ({
 }: TutorialCardProps) => {
   return (
     <Card 
-      className="w-[420px] shadow-lg bg-background border-border"
+      className="w-[420px] shadow-lg bg-background border-border nextstep-card"
       style={{ 
         backgroundColor: 'hsl(var(--background))',
         borderColor: 'hsl(var(--border))'

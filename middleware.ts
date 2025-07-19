@@ -51,7 +51,9 @@ export const config = {
      * - _next/static (static files)
      * - _next/image (image optimization files)
      * - favicon.ico, sitemap.xml, robots.txt (metadata files)
+     * - images/ (public static images)
+     * - android-chrome, apple-touch-icon, favicon (icon files)
      */
-    '/((?!_next/static|_next/image|favicon.ico|sitemap.xml|robots.txt).*)',
+    '/((?!_next/static|_next/image|favicon.ico|sitemap.xml|robots.txt|images/|android-chrome|apple-touch-icon|favicon).*)',
   ],
 };

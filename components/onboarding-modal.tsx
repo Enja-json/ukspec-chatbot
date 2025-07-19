@@ -37,6 +37,18 @@ const registrationOptions = [
   { value: 'ceng', label: 'CEng', description: 'Chartered Engineer - complex engineering challenges' },
 ] as const;
 
+const careerGoalsExamples = [
+  "Become a chartered structural engineer and lead major infrastructure projects",
+  "Specialise in renewable energy systems and sustainable design", 
+  "Progress to engineering management while maintaining technical expertise"
+];
+
+const currentPositionExamples = [
+  "Graduate engineer at a consulting firm, 6 months experience with CAD and site visits",
+  "Student completing final year MEng, seeking placement in automotive sector", 
+  "Mid-level engineer with 3 years in manufacturing, looking to transition to chartership"
+];
+
 export function OnboardingModal({ isOpen, onClose, onComplete, isLoading = false }: OnboardingModalProps) {
   const [currentStep, setCurrentStep] = useState(1);
   const [formData, setFormData] = useState<OnboardingData>({
@@ -59,14 +71,10 @@ export function OnboardingModal({ isOpen, onClose, onComplete, isLoading = false
     } else if (step === 3) {
       if (!formData.careerGoals.trim()) {
         newErrors.careerGoals = 'Please describe your career goals';
-      } else if (formData.careerGoals.trim().length < 40) {
-        newErrors.careerGoals = 'Please provide more detail (at least 40 characters)';
       }
     } else if (step === 4) {
       if (!formData.currentPosition.trim()) {
         newErrors.currentPosition = 'Please describe your current position';
-      } else if (formData.currentPosition.trim().length < 40) {
-        newErrors.currentPosition = 'Please provide more detail (at least 40 characters)';
       }
     }
 
@@ -176,13 +184,32 @@ export function OnboardingModal({ isOpen, onClose, onComplete, isLoading = false
               </p>
             </div>
             
-            <div className="space-y-2">
+            <div className="space-y-3">
               <Label htmlFor="careerGoals" className="text-sm font-medium">
                 Your goals and aspirations
               </Label>
+              
+              <div className="space-y-2">
+                <p className="text-xs text-muted-foreground">Click an example to get started:</p>
+                <div className="flex flex-wrap gap-2">
+                  {careerGoalsExamples.map((example, index) => (
+                    <Button
+                      key={index}
+                      variant="outline"
+                      size="sm"
+                      type="button"
+                      onClick={() => setFormData(prev => ({ ...prev, careerGoals: example }))}
+                      className="h-auto py-2 px-3 text-xs text-left whitespace-normal"
+                    >
+                      {example}
+                    </Button>
+                  ))}
+                </div>
+              </div>
+              
               <Textarea
                 id="careerGoals"
-                placeholder="e.g., I want to become a chartered engineer specialising in renewable energy systems, lead technical teams, and contribute to sustainable infrastructure projects..."
+                placeholder="Describe your career aspirations and goals..."
                 value={formData.careerGoals}
                 onChange={(e) => setFormData(prev => ({ ...prev, careerGoals: e.target.value }))}
                 className="min-h-[120px] resize-none"
@@ -216,13 +243,32 @@ export function OnboardingModal({ isOpen, onClose, onComplete, isLoading = false
               </p>
             </div>
             
-            <div className="space-y-2">
+            <div className="space-y-3">
               <Label htmlFor="currentPosition" className="text-sm font-medium">
                 Your current role and experience
               </Label>
+              
+              <div className="space-y-2">
+                <p className="text-xs text-muted-foreground">Click an example to get started:</p>
+                <div className="flex flex-wrap gap-2">
+                  {currentPositionExamples.map((example, index) => (
+                    <Button
+                      key={index}
+                      variant="outline"
+                      size="sm"
+                      type="button"
+                      onClick={() => setFormData(prev => ({ ...prev, currentPosition: example }))}
+                      className="h-auto py-2 px-3 text-xs text-left whitespace-normal"
+                    >
+                      {example}
+                    </Button>
+                  ))}
+                </div>
+              </div>
+              
               <Textarea
                 id="currentPosition"
-                placeholder="e.g., I'm a junior mechanical engineer working on HVAC systems for commercial buildings. I've been in this role for 18 months and have experience with AutoCAD, system design calculations, and site inspections..."
+                placeholder="Describe your current role, experience, and responsibilities..."
                 value={formData.currentPosition}
                 onChange={(e) => setFormData(prev => ({ ...prev, currentPosition: e.target.value }))}
                 className="min-h-[120px] resize-none"

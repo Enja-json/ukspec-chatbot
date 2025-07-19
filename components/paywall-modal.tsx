@@ -22,14 +22,14 @@ export function PaywallModal({ isOpen, onClose, trigger, onStartTrial, isLoading
 
   const plans = {
     monthly: {
-      priceId: 'price_1Rk0ozPsTCOo0fiqB9GlMHI4',
+      priceId: 'price_1Rk6HHLt7v9Y6bvvwt8sShTT',
       price: '£4.98',
       period: 'month',
       savings: null,
       description: '14-day free trial',
     },
     lifetime: {
-      priceId: 'price_1Rk10QPsTCOo0fiqelQbkwze',
+      priceId: 'price_1Rk6HHLt7v9Y6bvvcPZDGidY',
       price: '£79.98',
       period: 'one time',
       savings: 'Never pay again',

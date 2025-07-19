@@ -96,7 +96,7 @@ export default function Page() {
             </Button>
             
             <p className="text-sm text-gray-400">
-              Join <span style={{ color: '#2B9CA8' }}>1,000+</span> engineers already using Mini Mentor
+              Join fellow engineers advancing their careers with <span style={{ color: '#2B9CA8' }}>Mini Mentor</span>
             </p>
           </div>
 
