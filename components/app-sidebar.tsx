@@ -2,6 +2,7 @@
 
 import type { User } from 'next-auth';
 import { useRouter } from 'next/navigation';
+import { ClipboardList, TrendingUp } from 'lucide-react';
 
 import { PlusIcon } from '@/components/icons';
 import { SidebarHistory } from '@/components/sidebar-history';
@@ -77,9 +78,7 @@ export function AppSidebar({ user }: { user: User | undefined }) {
               }}
               className="flex items-center gap-3 px-2 py-2 text-sm text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground rounded-md transition-colors"
             >
-              <div className="w-4 h-4 flex items-center justify-center">
-                <div className="w-3 h-3 bg-current rounded-sm opacity-60"></div>
-              </div>
+              <ClipboardList className="w-4 h-4" />
               Competency Log
             </Link>
             <Link
@@ -89,10 +88,8 @@ export function AppSidebar({ user }: { user: User | undefined }) {
               }}
               className="flex items-center gap-3 px-2 py-2 text-sm text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground rounded-md transition-colors"
             >
-              <div className="w-4 h-4 flex items-center justify-center">
-                <div className="w-3 h-3 bg-current rounded-sm opacity-60"></div>
-              </div>
-              Analytics
+              <TrendingUp className="w-4 h-4" />
+              Your Progress
             </Link>
             
             {/* Upgrade Button */}
@@ -106,4 +103,4 @@ export function AppSidebar({ user }: { user: User | undefined }) {
       <SidebarFooter>{user && <SidebarUserNav user={user} />}</SidebarFooter>
     </Sidebar>
   );
-}
+};
