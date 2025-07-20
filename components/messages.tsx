@@ -12,6 +12,13 @@ import { useCompetencyLog } from '@/hooks/use-competency-log';
 import { CompetencyLogModal } from './competency-log-modal';
 import type { Session } from 'next-auth';
 
+interface TaskFormData {
+  title: string;
+  description: string;
+  competencyCodeIds: string[];
+  evidenceFiles: File[];
+}
+
 interface MessagesProps {
   chatId: string;
   status: UseChatHelpers['status'];
@@ -103,10 +110,38 @@ function PureMessages({
   }, [chatId, messages, selectedChatModel, openModalWithAnalysis]);
 
   // Enhanced submit handler that includes AI metadata
-  const handleSubmitTaskWithAI = useCallback(async (formData: any) => {
+  const handleSubmitTaskWithAI = useCallback(async (formData: TaskFormData) => {
     const aiMetadata = modalData?.aiMetadata;
-    return await submitTask(formData, aiMetadata);
-  }, [submitTask, modalData]);
+    
+    // Convert TaskFormData to browser FormData
+    const browserFormData = new FormData();
+    browserFormData.append('title', formData.title);
+    browserFormData.append('description', formData.description);
+    
+    // Add competency codes
+    formData.competencyCodeIds.forEach(id => {
+      browserFormData.append('competencyCodeIds', id);
+    });
+    
+    // Add evidence files
+    formData.evidenceFiles.forEach(file => {
+      browserFormData.append('evidenceFiles', file);
+    });
+    
+    // Append AI metadata to the FormData if it exists
+    if (aiMetadata) {
+      browserFormData.append('aiMetadata', JSON.stringify(aiMetadata));
+    }
+    
+    try {
+      const result = await submitTask(browserFormData);
+      if (result.success) {
+        closeModal();
+      }
+    } catch (error) {
+      console.error('Error in AI task submit:', error);
+    }
+  }, [submitTask, modalData, closeModal]);
 
   return (
     <>
