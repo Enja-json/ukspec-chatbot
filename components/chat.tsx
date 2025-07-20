@@ -167,6 +167,11 @@ export function Chat({
             />
           )}
         </form>
+
+        {/* Disclaimer text */}
+        <div className="text-center text-xs text-muted-foreground pb-2 px-4">
+          Mini Mentor can make mistakes.
+        </div>
       </div>
 
       <Artifact
