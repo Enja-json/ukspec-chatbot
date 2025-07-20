@@ -3,9 +3,17 @@
 import { AddTaskButton } from '@/components/add-task-button';
 import { CompetencyLogModal } from '@/components/competency-log-modal';
 import { useCompetencyLog } from '@/hooks/use-competency-log';
+import { toast } from 'sonner';
 
 interface CompetencyLogDemoProps {
   className?: string;
+}
+
+interface TaskFormData {
+  title: string;
+  description: string;
+  competencyCodeIds: string[];
+  evidenceFiles: File[];
 }
 
 export function CompetencyLogDemo({ className }: CompetencyLogDemoProps) {
@@ -18,6 +26,33 @@ export function CompetencyLogDemo({ className }: CompetencyLogDemoProps) {
     closeModal,
     submitTask,
   } = useCompetencyLog();
+
+  // Adapter function to convert TaskFormData to FormData for our hook
+  const handleSubmit = async (formData: TaskFormData) => {
+    const browserFormData = new FormData();
+    
+    browserFormData.append('title', formData.title);
+    browserFormData.append('description', formData.description);
+    
+    // Add competency codes
+    formData.competencyCodeIds.forEach(id => {
+      browserFormData.append('competencyCodeIds', id);
+    });
+    
+    // Add evidence files
+    formData.evidenceFiles.forEach(file => {
+      browserFormData.append('evidenceFiles', file);
+    });
+
+    try {
+      const result = await submitTask(browserFormData);
+      if (result.success) {
+        closeModal();
+      }
+    } catch (error) {
+      console.error('Error in demo submit:', error);
+    }
+  };
 
   return (
     <div className={className}>
@@ -33,7 +68,7 @@ export function CompetencyLogDemo({ className }: CompetencyLogDemoProps) {
       <CompetencyLogModal
         isOpen={isModalOpen}
         onClose={closeModal}
-        onSubmit={submitTask}
+        onSubmit={handleSubmit}
         competencyCodes={competencyCodes}
         isLoading={isSubmitting}
       />
