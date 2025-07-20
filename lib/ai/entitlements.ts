@@ -10,6 +10,9 @@ interface ModelLimits {
 interface Entitlements {
   maxMessagesPerMonth: ModelLimits;
   availableChatModelIds: Array<ChatModel['id']>;
+  canExportCompetencyLog: boolean;
+  canExportAnalyticsPDF: boolean;
+  maxCompetencyTasks: number;
 }
 
 export const entitlementsByUserType: Record<UserType, Entitlements> = {
@@ -22,6 +25,9 @@ export const entitlementsByUserType: Record<UserType, Entitlements> = {
       'uk-spec-competency-model': 5,
     },
     availableChatModelIds: ['mini-mentor-model', 'uk-spec-competency-model'],
+    canExportCompetencyLog: false,
+    canExportAnalyticsPDF: false,
+    maxCompetencyTasks: 5,
   },
 
   /*
@@ -33,6 +39,9 @@ export const entitlementsByUserType: Record<UserType, Entitlements> = {
       'uk-spec-competency-model': 999999, // Unlimited
     },
     availableChatModelIds: ['mini-mentor-model', 'uk-spec-competency-model'],
+    canExportCompetencyLog: true,
+    canExportAnalyticsPDF: true,
+    maxCompetencyTasks: 999999, // Unlimited
   },
 };
 

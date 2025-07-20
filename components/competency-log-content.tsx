@@ -44,12 +44,14 @@ export function CompetencyLogContent({ session }: CompetencyLogContentProps) {
 
   const {
     isModalOpen,
+    openModal,
+    closeModal,
+    openModalWithAnalysis,
+    submitTask,
     competencyCodes,
     isLoading,
     isSubmitting,
-    openModal,
-    closeModal,
-    submitTask,
+    modalData,
   } = useCompetencyLog();
 
   // Fetch user's tasks
@@ -158,29 +160,29 @@ export function CompetencyLogContent({ session }: CompetencyLogContentProps) {
   return (
     <div className="group w-full overflow-auto">
       {/* Header - simplified for competency log */}
-      <CompetencyLogHeader />
+      <CompetencyLogHeader session={session} />
 
               {/* Main Content */}
         <div className="mx-auto max-w-3xl px-4 pb-24">
           {/* Page Title and Add Button */}
           <div className="flex items-center justify-between mb-8 pt-6">
-          <div>
-            <h1 className="text-2xl font-semibold text-foreground">
-              Competency Log
-            </h1>
-            <p className="text-muted-foreground mt-2">
-              Track your engineering tasks and map them to UK-SPEC competencies
-            </p>
+            <div>
+              <h1 className="text-2xl font-semibold text-foreground">
+                Competency Log
+              </h1>
+              <p className="text-muted-foreground mt-2">
+                Track your engineering tasks and map them to UK-SPEC competencies
+              </p>
+            </div>
+            
+            {/* Add Task Button - only show if user has tasks */}
+            {tasks.length > 0 && (
+              <AddTaskButton 
+                onClick={handleAddTask}
+                disabled={isSubmitting}
+              />
+            )}
           </div>
-          
-          {/* Add Task Button - only show if user has tasks */}
-          {tasks.length > 0 && (
-            <AddTaskButton 
-              onClick={handleAddTask}
-              disabled={isSubmitting}
-            />
-          )}
-        </div>
 
         {/* Content */}
         {isLoadingTasks ? (

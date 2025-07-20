@@ -21,6 +21,8 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Button } from '@/components/ui/button';
 import { Loader2, Download } from 'lucide-react';
 import { toast } from 'sonner';
+import { getUserEntitlements } from '@/lib/ai/entitlements';
+import { usePaywall } from '@/components/paywall-provider';
 
 // Register Chart.js components
 ChartJS.register(
@@ -95,6 +97,13 @@ export function CompetencyAnalyticsContent({ session }: { session: Session }) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [exporting, setExporting] = useState(false);
+  const [userSubscriptionStatus, setUserSubscriptionStatus] = useState<string>('none');
+  const { showPaywall } = usePaywall();
+
+  // Get user entitlements
+  const userType = session.user?.type || 'regular';
+  const userEntitlements = getUserEntitlements(userType, userSubscriptionStatus as any);
+  const canExport = userEntitlements.canExportAnalyticsPDF;
 
   useEffect(() => {
     async function fetchAnalytics() {
@@ -112,10 +121,29 @@ export function CompetencyAnalyticsContent({ session }: { session: Session }) {
       }
     }
 
+    async function fetchUserDetails() {
+      try {
+        const response = await fetch('/api/user/details');
+        if (response.ok) {
+          const userData = await response.json();
+          setUserSubscriptionStatus(userData.subscriptionStatus || 'none');
+        }
+      } catch (err) {
+        console.error('Failed to fetch user details:', err);
+      }
+    }
+
     fetchAnalytics();
+    fetchUserDetails();
   }, []);
 
   const handleExport = async () => {
+    if (!canExport) {
+      // Show paywall modal for non-professional users
+      showPaywall('signup');
+      return;
+    }
+
     try {
       setExporting(true);
       const response = await fetch('/api/competency/analytics/export');
@@ -396,6 +424,7 @@ export function CompetencyAnalyticsContent({ session }: { session: Session }) {
             </p>
           </div>
         </div>
+        
         <Button
           onClick={handleExport}
           disabled={exporting}

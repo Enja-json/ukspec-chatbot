@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@/app/(auth)/auth';
-import { createCompetencyTaskWithDetails, getCompetencyTasksByUserId } from '@/lib/db/queries';
+import { createCompetencyTaskWithDetails, getCompetencyTasksByUserId, getUserById } from '@/lib/db/queries';
+import { getUserEntitlements } from '@/lib/ai/entitlements';
 import { z } from 'zod';
 
 // File upload configuration
@@ -39,6 +40,33 @@ export async function POST(request: NextRequest) {
       return NextResponse.json(
         { error: 'Unauthorized' },
         { status: 401 }
+      );
+    }
+
+    // Check user entitlements before processing the request
+    const userDetails = await getUserById(session.user.id!);
+    if (!userDetails) {
+      return NextResponse.json(
+        { error: 'User not found' },
+        { status: 404 }
+      );
+    }
+
+    const userType = session.user.type || 'regular';
+    const userEntitlements = getUserEntitlements(userType, userDetails.subscriptionStatus);
+    
+    // Check current competency task count against limit
+    const currentTasks = await getCompetencyTasksByUserId(session.user.id!);
+    if (currentTasks.length >= userEntitlements.maxCompetencyTasks) {
+      return NextResponse.json(
+        { 
+          error: 'Competency task limit reached',
+          message: 'Upgrade to Professional to add unlimited competency tasks',
+          currentCount: currentTasks.length,
+          maxAllowed: userEntitlements.maxCompetencyTasks,
+          requiresUpgrade: true
+        },
+        { status: 403 }
       );
     }
 

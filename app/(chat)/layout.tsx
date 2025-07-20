@@ -91,13 +91,13 @@ export default async function Layout({
       <NextStepProvider>
         <NextStep steps={tutorialSteps} cardComponent={TutorialCard}>
           <PaywallProvider>
-            <SidebarProvider defaultOpen={!isCollapsed}>
-              <AppSidebar user={session?.user} />
-              <SidebarInset>{children}</SidebarInset>
-              <OnboardingHandler />
+      <SidebarProvider defaultOpen={!isCollapsed}>
+        <AppSidebar user={session?.user} />
+        <SidebarInset>{children}</SidebarInset>
+        <OnboardingHandler />
               <TutorialHandler />
               <PaywallModalHandler />
-            </SidebarProvider>
+      </SidebarProvider>
           </PaywallProvider>
         </NextStep>
       </NextStepProvider>

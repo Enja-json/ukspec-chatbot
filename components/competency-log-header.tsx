@@ -1,11 +1,49 @@
 'use client';
 
+import { useEffect, useState } from 'react';
+import type { Session } from 'next-auth';
 import { SidebarToggle } from '@/components/sidebar-toggle';
 import { Button } from '@/components/ui/button';
 import { Download } from 'lucide-react';
+import { getUserEntitlements } from '@/lib/ai/entitlements';
+import { usePaywall } from '@/components/paywall-provider';
 
-export function CompetencyLogHeader() {
+interface CompetencyLogHeaderProps {
+  session: Session;
+}
+
+export function CompetencyLogHeader({ session }: CompetencyLogHeaderProps) {
+  const [userSubscriptionStatus, setUserSubscriptionStatus] = useState<string>('none');
+  const { showPaywall } = usePaywall();
+
+  // Get user entitlements
+  const userType = session.user?.type || 'regular';
+  const userEntitlements = getUserEntitlements(userType, userSubscriptionStatus as any);
+  const canExport = userEntitlements.canExportCompetencyLog;
+
+  useEffect(() => {
+    async function fetchUserDetails() {
+      try {
+        const response = await fetch('/api/user/details');
+        if (response.ok) {
+          const userData = await response.json();
+          setUserSubscriptionStatus(userData.subscriptionStatus || 'none');
+        }
+      } catch (err) {
+        console.error('Failed to fetch user details:', err);
+      }
+    }
+
+    fetchUserDetails();
+  }, []);
+
   const handleExport = async () => {
+    if (!canExport) {
+      // Show paywall modal for non-professional users
+      showPaywall('signup');
+      return;
+    }
+
     try {
       const response = await fetch('/api/competency/export');
       if (!response.ok) throw new Error('Export failed');
@@ -52,6 +90,7 @@ export function CompetencyLogHeader() {
           </p>
         </div>
       </div>
+      
       <Button
         onClick={handleExport}
         variant="outline"

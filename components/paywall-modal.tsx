@@ -12,7 +12,7 @@ import {
 interface PaywallModalProps {
   isOpen: boolean;
   onClose: () => void;
-  trigger: 'signup' | 'rate-limit';
+  trigger: 'signup' | 'rate-limit' | 'competency-limit';
   onStartTrial: (priceId: string) => void;
   isLoading?: boolean;
 }
@@ -26,11 +26,11 @@ export function PaywallModal({ isOpen, onClose, trigger, onStartTrial, isLoading
       price: '£4.98',
       period: 'month',
       savings: null,
-      description: '14-day free trial',
+      description: 'Free for 14 days',
     },
     lifetime: {
       priceId: 'price_1Rk6HHLt7v9Y6bvvcPZDGidY',
-      price: '£79.98',
+      price: '£43.98',
       period: 'one time',
       savings: 'Never pay again',
       description: 'Pay once, use forever',
@@ -43,12 +43,15 @@ export function PaywallModal({ isOpen, onClose, trigger, onStartTrial, isLoading
     'Competency tracking dashboard',
     'Monthly progress reports via email',
     'Export your progress (PDF & Excel)',
-    ...(selectedPlan === 'monthly' ? ['14-day free trial'] : ['Lifetime access']),
+    ...(selectedPlan === 'monthly' ? ['Free for 14 days'] : ['Lifetime access']),
   ];
 
   const getTitle = () => {
     if (trigger === 'rate-limit') {
       return "You've reached your message limit";
+    }
+    if (trigger === 'competency-limit') {
+      return "You've reached your competency log limit";
     }
     return 'Unlock Your Engineering Potential';
   };
@@ -57,8 +60,11 @@ export function PaywallModal({ isOpen, onClose, trigger, onStartTrial, isLoading
     if (trigger === 'rate-limit') {
       return 'Upgrade to Professional to continue your chartership journey with unlimited access.';
     }
+    if (trigger === 'competency-limit') {
+      return 'You\'ve reached the maximum number of competency entries for free users. Upgrade to Professional to add unlimited competency tasks and accelerate your chartership journey.';
+    }
     return selectedPlan === 'monthly' 
-      ? 'Start your 14-day free trial and accelerate your UK engineering chartership.'
+      ? 'Start your free trial and accelerate your UK engineering chartership journey.'
       : 'Get lifetime access and accelerate your UK engineering chartership journey.';
   };
 
@@ -66,12 +72,12 @@ export function PaywallModal({ isOpen, onClose, trigger, onStartTrial, isLoading
     if (isLoading) {
       return selectedPlan === 'monthly' ? 'Starting trial...' : 'Processing...';
     }
-    return selectedPlan === 'monthly' ? 'Start 14-Day Free Trial' : 'Get Lifetime Access';
+    return selectedPlan === 'monthly' ? 'Start Free 14-Day Trial' : 'Get Lifetime Access';
   };
 
   const getButtonSubtext = () => {
     if (selectedPlan === 'monthly') {
-      return 'No charge for 14 days. Cancel anytime.';
+      return 'Free for 14 days, then £4.98/month. Cancel anytime.';
     }
     return 'One-time payment, lifetime access.';
   };
@@ -131,6 +137,11 @@ export function PaywallModal({ isOpen, onClose, trigger, onStartTrial, isLoading
             {plans[selectedPlan].savings && (
               <div className="text-sm text-primary font-medium mt-2">
                 {plans[selectedPlan].savings}
+              </div>
+            )}
+            {selectedPlan === 'monthly' && (
+              <div className="text-sm text-green-600 font-medium mt-2">
+                {plans[selectedPlan].description}
               </div>
             )}
           </div>

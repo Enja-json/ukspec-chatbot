@@ -1,6 +1,7 @@
 import { auth } from '@/app/(auth)/auth';
-import { getCompetencyTasksByUserId, getAllCompetencyCodes } from '@/lib/db/queries';
+import { getCompetencyTasksByUserId, getAllCompetencyCodes, getUserById } from '@/lib/db/queries';
 import { NextResponse } from 'next/server';
+import { getUserEntitlements } from '@/lib/ai/entitlements';
 import { PDFDocument, rgb, StandardFonts } from 'pdf-lib';
 
 export async function GET() {
@@ -11,6 +12,25 @@ export async function GET() {
       return NextResponse.json(
         { error: 'Unauthorized' },
         { status: 401 }
+      );
+    }
+
+    // Check user entitlements
+    const userDetails = await getUserById(session.user.id);
+    if (!userDetails) {
+      return NextResponse.json(
+        { error: 'User not found' },
+        { status: 404 }
+      );
+    }
+
+    const userType = session.user.type || 'regular';
+    const userEntitlements = getUserEntitlements(userType, userDetails.subscriptionStatus);
+
+    if (!userEntitlements.canExportAnalyticsPDF) {
+      return NextResponse.json(
+        { error: 'Upgrade to Professional to export analytics PDF' },
+        { status: 403 }
       );
     }
 

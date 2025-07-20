@@ -2,6 +2,8 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { toast } from 'sonner';
+import { useUserEntitlements } from './use-user-entitlements';
+import { usePaywall } from '@/components/paywall-provider';
 
 interface CompetencyCode {
   id: string;
@@ -22,6 +24,7 @@ export function useCompetencyLog() {
   const [competencyCodes, setCompetencyCodes] = useState<CompetencyCode[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [currentTaskCount, setCurrentTaskCount] = useState(0);
   const [modalData, setModalData] = useState<{
     taskTitle: string;
     taskDescription: string;
@@ -38,12 +41,22 @@ export function useCompetencyLog() {
     };
   } | null>(null);
 
+  const { entitlements, loading: entitlementsLoading } = useUserEntitlements();
+  const { showPaywall } = usePaywall();
+
   // Fetch competency codes from database
   useEffect(() => {
     if (isModalOpen && competencyCodes.length === 0) {
       fetchCompetencyCodes();
     }
   }, [isModalOpen, competencyCodes.length]);
+
+  // Fetch current task count when entitlements are loaded
+  useEffect(() => {
+    if (entitlements && !entitlementsLoading) {
+      fetchCurrentTaskCount();
+    }
+  }, [entitlements, entitlementsLoading]);
 
   const fetchCompetencyCodes = async () => {
     setIsLoading(true);
@@ -62,7 +75,32 @@ export function useCompetencyLog() {
     }
   };
 
-  const openModal = () => setIsModalOpen(true);
+  const fetchCurrentTaskCount = async () => {
+    try {
+      const response = await fetch('/api/competency-tasks');
+      if (response.ok) {
+        const data = await response.json();
+        setCurrentTaskCount(data.tasks?.length || 0);
+      }
+    } catch (error) {
+      console.error('Error fetching task count:', error);
+    }
+  };
+
+  const canAddMoreTasks = () => {
+    if (!entitlements) return true; // Allow if entitlements not loaded yet
+    return currentTaskCount < entitlements.maxCompetencyTasks;
+  };
+
+  const openModal = () => {
+    if (!canAddMoreTasks()) {
+      // Show paywall modal instead of competency modal
+      showPaywall('competency-limit');
+      return;
+    }
+    setIsModalOpen(true);
+  };
+
   const closeModal = () => {
     setIsModalOpen(false);
     setModalData(null);
@@ -83,69 +121,44 @@ export function useCompetencyLog() {
       aiResponseData?: any;
     };
   }) => {
+    if (!canAddMoreTasks()) {
+      // Show paywall modal instead of competency modal
+      showPaywall('competency-limit');
+      return;
+    }
     setModalData(analysisData);
     setIsModalOpen(true);
-  }, []);
+  }, [entitlements, currentTaskCount, showPaywall]);
 
-  const submitTask = async (formData: TaskFormData, aiMetadata?: {
-    chatId: string;
-    messageId: string;
-    aiModel: string;
-    aiResponseData?: any;
-  }) => {
+  const submitTask = async (formData: FormData) => {
     setIsSubmitting(true);
     try {
-      // Create FormData for file upload
-      const submitData = new FormData();
-      submitData.append('title', formData.title);
-      submitData.append('description', formData.description);
-      submitData.append('competencyCodeIds', JSON.stringify(formData.competencyCodeIds));
-      
-      // Add AI metadata if provided
-      if (aiMetadata) {
-        submitData.append('chatId', aiMetadata.chatId);
-        submitData.append('messageId', aiMetadata.messageId);
-        submitData.append('aiModel', aiMetadata.aiModel);
-        if (aiMetadata.aiResponseData) {
-          submitData.append('aiResponseData', JSON.stringify(aiMetadata.aiResponseData));
-        }
-        
-        // Map modal data to AI competency data if available
-        if (modalData) {
-          const aiCompetencyData = modalData.demonstratedCompetencies.map(comp => ({
-            competencyCodeId: comp.code,
-            confidenceScore: comp.confidence_percentage,
-            aiExplanation: comp.explanation,
-          }));
-          submitData.append('aiCompetencyData', JSON.stringify(aiCompetencyData));
-        }
-      }
-      
-      // Append files
-      formData.evidenceFiles.forEach((file, index) => {
-        submitData.append(`evidenceFile_${index}`, file);
-      });
-
       const response = await fetch('/api/competency-tasks', {
         method: 'POST',
-        body: submitData,
+        body: formData,
       });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || 'Failed to create task');
-      }
 
       const result = await response.json();
       
-      toast.success('Task added successfully!');
-      closeModal();
+      if (!response.ok) {
+        if (result.requiresUpgrade) {
+          // Show paywall modal for upgrade
+          showPaywall('competency-limit');
+          return { success: false };
+        }
+        throw new Error(result.error || 'Failed to create task');
+      }
+
+      toast.success('Competency task created successfully!');
       
-      return result;
+      // Refresh task count after successful creation
+      setCurrentTaskCount(prev => prev + 1);
+      
+      return { success: true, taskId: result.taskId };
     } catch (error) {
-      console.error('Error submitting task:', error);
-      toast.error(error instanceof Error ? error.message : 'Failed to add task');
-      throw error;
+      console.error('Error creating competency task:', error);
+      toast.error(error instanceof Error ? error.message : 'Failed to create task');
+      return { success: false };
     } finally {
       setIsSubmitting(false);
     }
@@ -153,13 +166,17 @@ export function useCompetencyLog() {
 
   return {
     isModalOpen,
+    openModal,
+    closeModal,
+    openModalWithAnalysis,
+    submitTask,
     competencyCodes,
     isLoading,
     isSubmitting,
     modalData,
-    openModal,
-    closeModal,
-    submitTask,
-    openModalWithAnalysis,
+    currentTaskCount,
+    maxTasks: entitlements?.maxCompetencyTasks || 0,
+    canAddMoreTasks: canAddMoreTasks(),
+    tasksRemaining: entitlements ? Math.max(0, entitlements.maxCompetencyTasks - currentTaskCount) : 0,
   };
 } 

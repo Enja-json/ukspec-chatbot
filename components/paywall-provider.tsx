@@ -5,9 +5,9 @@ import { toast } from '@/components/toast';
 
 interface PaywallContextType {
   isPaywallOpen: boolean;
-  showPaywall: (trigger: 'signup' | 'rate-limit') => void;
+  showPaywall: (trigger: 'signup' | 'rate-limit' | 'competency-limit') => void;
   hidePaywall: () => void;
-  paywallTrigger: 'signup' | 'rate-limit' | null;
+  paywallTrigger: 'signup' | 'rate-limit' | 'competency-limit' | null;
   startTrial: (priceId: string) => Promise<void>;
   isLoading: boolean;
 }
@@ -16,10 +16,10 @@ const PaywallContext = createContext<PaywallContextType | undefined>(undefined);
 
 export function PaywallProvider({ children }: { children: ReactNode }) {
   const [isPaywallOpen, setIsPaywallOpen] = useState(false);
-  const [paywallTrigger, setPaywallTrigger] = useState<'signup' | 'rate-limit' | null>(null);
+  const [paywallTrigger, setPaywallTrigger] = useState<'signup' | 'rate-limit' | 'competency-limit' | null>(null);
   const [isLoading, setIsLoading] = useState(false);
 
-  const showPaywall = useCallback((trigger: 'signup' | 'rate-limit') => {
+  const showPaywall = useCallback((trigger: 'signup' | 'rate-limit' | 'competency-limit') => {
     setPaywallTrigger(trigger);
     setIsPaywallOpen(true);
   }, []);
